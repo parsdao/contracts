@@ -15,6 +15,24 @@ remappings = [
     "solmate/=lib/solmate/src/",
 ]
 
+# CI profile
+[profile.ci]
+src = "src"
+out = "out"
+libs = ["lib"]
+solc = "0.8.23"
+optimizer = true
+optimizer_runs = 200
+via_ir = false
+evm_version = "paris"
+verbosity = 2
+fuzz = { runs = 256 }
+remappings = [
+    "@openzeppelin/=lib/openzeppelin-contracts/",
+    "@openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/",
+    "solmate/=lib/solmate/src/",
+]
+
 # Fuzz testing
 [fuzz]
 runs = 1000
