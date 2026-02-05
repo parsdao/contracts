@@ -7,7 +7,7 @@ import {ERC4626} from "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.so
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
-import {ICommitteeTreasury} from "../interfaces/ITreasury.sol";
+import {ICommitteeTreasury, ITreasury} from "../interfaces/ITreasury.sol";
 import {ICommittee} from "../interfaces/IGovernance.sol";
 
 /**
@@ -33,6 +33,8 @@ contract CommitteeTreasury is ICommitteeTreasury, AccessControl, ReentrancyGuard
     error CommitteeTreasury_InsufficientBalance();
     error CommitteeTreasury_InvalidAmount();
     error CommitteeTreasury_ZeroAddress();
+    error CommitteeTreasury_ClaimTooEarly();
+    error CommitteeTreasury_ZeroAllocation();
 
     // =========  EVENTS ========= //
 
@@ -51,6 +53,11 @@ contract CommitteeTreasury is ICommitteeTreasury, AccessControl, ReentrancyGuard
     /// @notice Role for spending funds.
     bytes32 public constant SPENDER_ROLE = keccak256("SPENDER_ROLE");
 
+    // =========  CONSTANTS ========= //
+
+    /// @notice Minimum interval between allocation claims (30 days).
+    uint256 public constant CLAIM_INTERVAL = 30 days;
+
     // =========  STATE ========= //
 
     /// @notice The committee this treasury belongs to.
@@ -64,6 +71,9 @@ contract CommitteeTreasury is ICommitteeTreasury, AccessControl, ReentrancyGuard
 
     /// @notice Timestamp of last allocation claim.
     uint256 public lastClaimTimestamp;
+
+    /// @notice The token used for allocation claims from main treasury.
+    address public claimToken;
 
     /// @notice Total amount spent.
     mapping(address => uint256) public totalSpent;
@@ -88,18 +98,22 @@ contract CommitteeTreasury is ICommitteeTreasury, AccessControl, ReentrancyGuard
      * @param  committee_     The committee contract address.
      * @param  mainTreasury_  The main treasury address.
      * @param  allocationPct_ The allocation percentage.
+     * @param  claimToken_    The token to claim from main treasury.
      */
     constructor(
         address committee_,
         address mainTreasury_,
-        uint256 allocationPct_
+        uint256 allocationPct_,
+        address claimToken_
     ) {
         require(committee_ != address(0), "CommitteeTreasury: invalid committee");
         require(mainTreasury_ != address(0), "CommitteeTreasury: invalid treasury");
+        require(claimToken_ != address(0), "CommitteeTreasury: invalid claim token");
 
         committee = committee_;
         mainTreasury = mainTreasury_;
         allocationPct = allocationPct_;
+        claimToken = claimToken_;
         lastClaimTimestamp = block.timestamp;
 
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -120,17 +134,36 @@ contract CommitteeTreasury is ICommitteeTreasury, AccessControl, ReentrancyGuard
      * @notice Claim allocation from main treasury.
      * @dev    Moṭālebeh (مطالبه) = Claim in Persian
      *         Called periodically to receive committee's share of protocol revenue.
+     *         Requires CLAIM_INTERVAL to have passed since last claim.
+     *         Claims allocationPct of main treasury's token balance.
      */
-    function claimAllocation() external override onlyCommitteeMember {
-        // In a full implementation, this would:
-        // 1. Calculate pending allocation based on time and main treasury balance
-        // 2. Request withdrawal from main treasury
-        // 3. Update last claim timestamp
+    function claimAllocation() external override onlyCommitteeMember nonReentrant {
+        // Check if enough time has passed since last claim
+        if (block.timestamp < lastClaimTimestamp + CLAIM_INTERVAL) {
+            revert CommitteeTreasury_ClaimTooEarly();
+        }
 
+        // Check allocation is configured
+        if (allocationPct == 0) {
+            revert CommitteeTreasury_ZeroAllocation();
+        }
+
+        // Calculate claimable amount based on main treasury balance
+        uint256 treasuryBalance = IERC20(claimToken).balanceOf(mainTreasury);
+        uint256 claimAmount = (treasuryBalance * allocationPct) / 10_000;
+
+        if (claimAmount == 0) {
+            revert CommitteeTreasury_InvalidAmount();
+        }
+
+        // Update last claim timestamp before external call
         lastClaimTimestamp = block.timestamp;
-        // TODO: Implement actual claim logic with main treasury integration
 
-        emit AllocationClaimed(0, block.timestamp);
+        // Request withdrawal from main treasury
+        // The main treasury must have granted withdrawal approval to this contract
+        ITreasury(mainTreasury).withdrawReserves(address(this), claimToken, claimAmount);
+
+        emit AllocationClaimed(claimAmount, block.timestamp);
     }
 
     // =========  SPENDING ========= //
@@ -249,6 +282,15 @@ contract CommitteeTreasury is ICommitteeTreasury, AccessControl, ReentrancyGuard
     function setAllocationPct(uint256 newAllocationPct_) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(newAllocationPct_ <= 10_000, "CommitteeTreasury: invalid allocation");
         allocationPct = newAllocationPct_;
+    }
+
+    /**
+     * @notice Update the claim token.
+     * @param  newClaimToken_ The new claim token address.
+     */
+    function setClaimToken(address newClaimToken_) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(newClaimToken_ != address(0), "CommitteeTreasury: invalid claim token");
+        claimToken = newClaimToken_;
     }
 
     // =========  DEPOSIT ========= //

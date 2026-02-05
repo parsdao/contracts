@@ -43,6 +43,10 @@ contract Committee is ICommittee, AccessControl, ReentrancyGuard {
     error Committee_ExecutionFailed();
     error Committee_InsufficientVotes();
     error Committee_ProposalNotPassed();
+    error Committee_ExecutionNotFound();
+    error Committee_AlreadyApproved();
+    error Committee_AlreadyExecuted();
+    error Committee_InsufficientApprovals();
 
     // =========  EVENTS ========= //
 
@@ -50,6 +54,9 @@ contract Committee is ICommittee, AccessControl, ReentrancyGuard {
     event MemberRemoved(address indexed member, uint256 timestamp);
     event ActionExecuted(address indexed target, uint256 value, bytes data, bytes result);
     event AllocationUpdated(uint256 oldPct, uint256 newPct);
+    event ExecutionProposed(bytes32 indexed executionId, address indexed proposer, address target, uint256 value);
+    event ExecutionApproved(bytes32 indexed executionId, address indexed approver, uint256 approvalCount);
+    event ExecutionCompleted(bytes32 indexed executionId, address indexed executor);
 
     // =========  ROLES ========= //
 
@@ -69,6 +76,9 @@ contract Committee is ICommittee, AccessControl, ReentrancyGuard {
 
     /// @notice Precision for allocation percentage.
     uint256 public constant PRECISION = 10_000;
+
+    /// @notice Minimum approvals required for execution (or 50% of members, whichever is lower).
+    uint256 public constant EXECUTION_THRESHOLD = 3;
 
     // =========  STATE ========= //
 
@@ -98,6 +108,38 @@ contract Committee is ICommittee, AccessControl, ReentrancyGuard {
 
     /// @notice The committee's treasury address.
     address public treasury;
+
+    /// @notice Counter for generating unique execution IDs.
+    uint256 private _executionNonce;
+
+    // =========  EXECUTION STRUCTS ========= //
+
+    /**
+     * @notice Struct for pending multi-sig executions.
+     * @param  target      The target address for the call.
+     * @param  value       The ETH value to send.
+     * @param  data        The calldata to execute.
+     * @param  approvals   The number of approvals received.
+     * @param  executed    Whether the execution has been completed.
+     * @param  proposer    The member who proposed the execution.
+     */
+    struct ExecutionData {
+        address target;
+        uint256 value;
+        bytes data;
+        uint256 approvals;
+        bool executed;
+        address proposer;
+    }
+
+    /// @notice Mapping of execution ID to execution data.
+    mapping(bytes32 => ExecutionData) private _executions;
+
+    /// @notice Mapping of execution ID to member approval status.
+    mapping(bytes32 => mapping(address => bool)) public hasApproved;
+
+    /// @notice Mapping of execution hash to execution ID (for execute() compatibility).
+    mapping(bytes32 => bytes32) private _executionHashToId;
 
     // =========  CONSTRUCTOR ========= //
 
@@ -221,21 +263,163 @@ contract Committee is ICommittee, AccessControl, ReentrancyGuard {
 
     // =========  EXECUTION ========= //
 
+    /**
+     * @notice Get the required number of approvals for execution.
+     * @return The minimum of EXECUTION_THRESHOLD or 50% of members (rounded up).
+     */
+    function requiredApprovals() public view returns (uint256) {
+        uint256 halfMembers = (_members.length + 1) / 2; // Round up
+        return halfMembers < EXECUTION_THRESHOLD ? halfMembers : EXECUTION_THRESHOLD;
+    }
+
+    /**
+     * @notice Get pending execution details.
+     * @param  executionId The execution ID.
+     * @return target      The target address.
+     * @return value       The ETH value.
+     * @return data        The calldata.
+     * @return approvals   The current approval count.
+     * @return executed    Whether already executed.
+     * @return proposer    The proposer address.
+     */
+    function pendingExecutions(bytes32 executionId)
+        external
+        view
+        returns (
+            address target,
+            uint256 value,
+            bytes memory data,
+            uint256 approvals,
+            bool executed,
+            address proposer
+        )
+    {
+        ExecutionData storage exec = _executions[executionId];
+        return (exec.target, exec.value, exec.data, exec.approvals, exec.executed, exec.proposer);
+    }
+
+    /**
+     * @notice Propose an execution for multi-sig approval.
+     * @param  target The target address for the call.
+     * @param  value  The ETH value to send.
+     * @param  data   The calldata to execute.
+     * @return executionId The unique ID for this execution proposal.
+     */
+    function proposeExecution(
+        address target,
+        uint256 value,
+        bytes calldata data
+    ) external onlyRole(MEMBER_ROLE) returns (bytes32 executionId) {
+        executionId = keccak256(abi.encodePacked(target, value, data, _executionNonce++, block.timestamp));
+
+        _executions[executionId] = ExecutionData({
+            target: target,
+            value: value,
+            data: data,
+            approvals: 1,
+            executed: false,
+            proposer: msg.sender
+        });
+
+        // Store hash mapping for execute() compatibility
+        bytes32 execHash = keccak256(abi.encodePacked(target, value, data));
+        _executionHashToId[execHash] = executionId;
+
+        // Proposer automatically approves
+        hasApproved[executionId][msg.sender] = true;
+
+        emit ExecutionProposed(executionId, msg.sender, target, value);
+        emit ExecutionApproved(executionId, msg.sender, 1);
+
+        return executionId;
+    }
+
+    /**
+     * @notice Approve a pending execution.
+     * @param  executionId The execution ID to approve.
+     */
+    function approveExecution(bytes32 executionId) external onlyRole(MEMBER_ROLE) {
+        ExecutionData storage exec = _executions[executionId];
+
+        if (exec.proposer == address(0)) revert Committee_ExecutionNotFound();
+        if (exec.executed) revert Committee_AlreadyExecuted();
+        if (hasApproved[executionId][msg.sender]) revert Committee_AlreadyApproved();
+
+        hasApproved[executionId][msg.sender] = true;
+        exec.approvals++;
+
+        emit ExecutionApproved(executionId, msg.sender, exec.approvals);
+    }
+
     /// @inheritdoc ICommittee
     function execute(
         address target,
         uint256 value,
         bytes calldata data
     ) external override onlyRole(MEMBER_ROLE) nonReentrant returns (bytes memory) {
-        // In a full implementation, this would require multi-sig or voting
-        // For now, any member can execute
-        // TODO: Implement proper voting mechanism
+        // Find the execution ID for this call
+        // Caller must have previously proposed this exact execution
+        bytes32 executionId = _findExecutionId(target, value, data);
+        if (executionId == bytes32(0)) revert Committee_ExecutionNotFound();
 
-        (bool success, bytes memory result) = target.call{value: value}(data);
+        return _executeWithId(executionId);
+    }
+
+    /**
+     * @notice Execute a pending execution by its ID.
+     * @param  executionId The execution ID.
+     * @return result The return data from the call.
+     */
+    function executeById(bytes32 executionId)
+        external
+        onlyRole(MEMBER_ROLE)
+        nonReentrant
+        returns (bytes memory)
+    {
+        return _executeWithId(executionId);
+    }
+
+    /**
+     * @dev Internal function to execute with approval checks.
+     */
+    function _executeWithId(bytes32 executionId) internal returns (bytes memory) {
+        ExecutionData storage exec = _executions[executionId];
+
+        if (exec.proposer == address(0)) revert Committee_ExecutionNotFound();
+        if (exec.executed) revert Committee_AlreadyExecuted();
+        if (exec.approvals < requiredApprovals()) revert Committee_InsufficientApprovals();
+
+        exec.executed = true;
+
+        (bool success, bytes memory result) = exec.target.call{value: exec.value}(exec.data);
         if (!success) revert Committee_ExecutionFailed();
 
-        emit ActionExecuted(target, value, data, result);
+        emit ActionExecuted(exec.target, exec.value, exec.data, result);
+        emit ExecutionCompleted(executionId, msg.sender);
+
         return result;
+    }
+
+    /**
+     * @dev Find an execution ID matching the given parameters.
+     */
+    function _findExecutionId(
+        address target,
+        uint256 value,
+        bytes calldata data
+    ) internal view returns (bytes32) {
+        bytes32 execHash = keccak256(abi.encodePacked(target, value, data));
+        bytes32 executionId = _executionHashToId[execHash];
+
+        // Verify the execution exists and hasn't been executed
+        if (executionId != bytes32(0)) {
+            ExecutionData storage exec = _executions[executionId];
+            if (!exec.executed && exec.proposer != address(0)) {
+                return executionId;
+            }
+        }
+
+        return bytes32(0);
     }
 
     // =========  ADMIN FUNCTIONS ========= //
