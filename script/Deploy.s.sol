@@ -6,7 +6,6 @@ import {Kernel} from "../src/Kernel.sol";
 import {PARS} from "../src/tokens/PARS.sol";
 import {xPARS} from "../src/tokens/xPARS.sol";
 import {vePARS} from "../src/tokens/vePARS.sol";
-import {MIGA} from "../src/tokens/MIGA.sol";
 import {Treasury} from "../src/treasury/Treasury.sol";
 import {FeeRouter} from "../src/treasury/FeeRouter.sol";
 import {Charter} from "../src/governance/Charter.sol";
@@ -23,8 +22,7 @@ import {Charter} from "../src/governance/Charter.sol";
  *         3. PARS - Governance token
  *         4. xPARS - Staked token
  *         5. vePARS - Vote-escrow token
- *         6. MIGA - Bridged token
- *         7. Treasury - Reserve management
+ *         6. Treasury - Reserve management
  *         8. FeeRouter - Fee distribution
  *         9. Charter - Governance parameters
  *
@@ -64,7 +62,6 @@ contract DeployPars is Script {
     PARS public pars;
     xPARS public xpars;
     vePARS public vepars;
-    MIGA public miga;
     Treasury public treasury;
     FeeRouter public feeRouter;
     Charter public charter;
@@ -104,11 +101,7 @@ contract DeployPars is Script {
         vepars = new vePARS(address(xpars));
         console2.log("vePARS deployed:", address(vepars));
 
-        // 6. Deploy MIGA (bridged token)
-        miga = new MIGA(deployer);
-        console2.log("MIGA deployed:", address(miga));
-
-        // 7. Deploy Treasury
+        // 6. Deploy Treasury
         treasury = new Treasury(kernel);
         console2.log("Treasury deployed:", address(treasury));
 
@@ -137,7 +130,6 @@ contract DeployPars is Script {
         console2.log("PARS:      ", address(pars));
         console2.log("xPARS:     ", address(xpars));
         console2.log("vePARS:    ", address(vepars));
-        console2.log("MIGA:      ", address(miga));
         console2.log("Treasury:  ", address(treasury));
         console2.log("FeeRouter: ", address(feeRouter));
         console2.log("Charter:   ", address(charter));

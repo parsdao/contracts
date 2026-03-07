@@ -140,7 +140,7 @@ interface ICharter {
  * @notice Interface for sub-DAO committees.
  * @dev    Komiteh (کمیته) = Committee in Persian
  *
- *         Committees in the MIGA/Pars ecosystem:
+ *         Committees in the Pars ecosystem:
  *         - FARHANG: Culture & Heritage
  *         - DANESH: Education & Research
  *         - RASANEH: Media & Journalism

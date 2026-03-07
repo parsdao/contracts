@@ -124,20 +124,3 @@ interface IvePARS {
     /// @return The delegatee address.
     function delegates(address account_) external view returns (address);
 }
-
-/**
- * @title  IMIGA Interface
- * @notice Interface for the bridged MIGA token.
- * @dev    MIGA is the Freedom of Information DAO token on Solana, bridged to EVM.
- */
-interface IMIGA is IERC20 {
-    /// @notice Mint bridged tokens (called by bridge).
-    /// @param  to_     The address to mint tokens to.
-    /// @param  amount_ The amount of tokens to mint.
-    function mint(address to_, uint256 amount_) external;
-
-    /// @notice Burn tokens for bridging out.
-    /// @param  from_   The address to burn tokens from.
-    /// @param  amount_ The amount of tokens to burn.
-    function burn(address from_, uint256 amount_) external;
-}
