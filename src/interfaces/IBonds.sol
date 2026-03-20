@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity 0.8.23;
+pragma solidity 0.8.24;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -91,6 +91,9 @@ interface IBondDepository {
 
     /// @notice Check if a market is active.
     function isLive(uint256 id_) external view returns (bool);
+
+    /// @notice Get market info.
+    function getMarket(uint256 id_) external view returns (Market memory);
 }
 
 /**
@@ -110,6 +113,14 @@ interface IBondTeller {
     }
 
     // =========  FUNCTIONS ========= //
+
+    /// @notice Create a bond note (called by depository).
+    function create(
+        address owner_,
+        uint256 payout_,
+        uint256 expiry_,
+        uint256 marketId_
+    ) external returns (uint256 index_);
 
     /// @notice Redeem a matured bond.
     function redeem(address owner_, uint256[] memory indexes_) external returns (uint256);

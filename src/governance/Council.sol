@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity 0.8.23;
+pragma solidity 0.8.24;
 
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {ICouncil, ITimelock} from "../interfaces/IGovernance.sol";
@@ -213,7 +213,9 @@ contract Council is ICouncil, Policy {
 
     // =========  CONSTRUCTOR ========= //
 
-    constructor(Kernel kernel_) Policy(kernel_) {}
+    constructor(Kernel kernel_) Policy(kernel_) {
+        admin = msg.sender;
+    }
 
     // =========  POLICY SETUP ========= //
 

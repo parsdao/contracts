@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity 0.8.23;
+pragma solidity 0.8.24;
 
 /**
  * @title Pars Protocol Kernel
@@ -124,7 +124,7 @@ abstract contract Module is KernelAdapter {
     /// @notice Modifier to restrict which policies have access to module functions.
     modifier permissioned() {
         if (
-            msg.sender == address(kernel) ||
+            msg.sender != address(kernel) &&
             !kernel.modulePermissions(KEYCODE(), Policy(msg.sender), msg.sig)
         ) revert Module_PolicyNotPermitted(msg.sender);
         _;
@@ -203,6 +203,7 @@ contract Kernel {
     error Kernel_InvalidModuleUpgrade(Keycode module_);
     error Kernel_PolicyAlreadyActivated(address policy_);
     error Kernel_PolicyNotActivated(address policy_);
+    error Kernel_InvalidTarget(address target_);
 
     // =========  PRIVILEGED ADDRESSES ========= //
 
@@ -278,6 +279,7 @@ contract Kernel {
             ensureContract(target_);
             _deactivatePolicy(Policy(target_));
         } else if (action_ == Actions.ChangeExecutor) {
+            if (target_ == address(0)) revert Kernel_InvalidTarget(target_);
             executor = target_;
         } else if (action_ == Actions.MigrateKernel) {
             ensureContract(target_);

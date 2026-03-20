@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity 0.8.23;
+pragma solidity 0.8.24;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -136,6 +136,9 @@ contract FeeRouter is IFeeRouter, AccessControl, ReentrancyGuard {
     /**
      * @notice Distribute collected fees to recipients.
      * @dev    Towzi' (توزیع) = Distribution in Persian
+     *         Intentionally permissionless: anyone can trigger distribution, but funds
+     *         only flow to admin-configured recipients. This allows keepers and bots
+     *         to trigger distribution without requiring elevated privileges.
      * @param  token_ The token to distribute.
      */
     function distribute(address token_) external override nonReentrant {
@@ -165,6 +168,7 @@ contract FeeRouter is IFeeRouter, AccessControl, ReentrancyGuard {
 
     /**
      * @notice Distribute a specific amount to recipients.
+     * @dev    Intentionally permissionless (same rationale as distribute).
      * @param  token_  The token to distribute.
      * @param  amount_ The amount to distribute.
      */

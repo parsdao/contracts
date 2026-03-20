@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity 0.8.23;
+pragma solidity 0.8.24;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -38,6 +38,7 @@ contract vePARS is IvePARS, ReentrancyGuard {
     error vePARS_InvalidDuration();
     error vePARS_LockNotExpired();
     error vePARS_NoExistingLock();
+    error vePARS_LockAlreadyExists();
     error vePARS_LockExpired();
     error vePARS_MaxLockExceeded();
     error vePARS_NotTransferable();
@@ -126,7 +127,7 @@ contract vePARS is IvePARS, ReentrancyGuard {
         }
 
         Lock storage lock = _locks[msg.sender];
-        if (lock.amount > 0) revert vePARS_NoExistingLock(); // Use increaseAmount instead
+        if (lock.amount > 0) revert vePARS_LockAlreadyExists(); // Use increaseAmount instead
 
         // Round down to epoch boundary
         uint256 lockEnd = _roundDownToEpoch(block.timestamp + duration_);
@@ -370,9 +371,10 @@ contract vePARS is IvePARS, ReentrancyGuard {
     }
 
     function _writeTotalSupplyCheckpoint() internal {
-        // Recalculate total - expensive but necessary for accuracy
+        // WARNING: Uses raw xPARS balance as a proxy for total voting power. This overstates
+        // total supply because it does not apply the time-decay formula per lock. A production
+        // implementation must iterate locks or maintain an incremental accumulator.
         uint256 total = IERC20(address(xpars)).balanceOf(address(this));
-        // This is a simplification; actual implementation would need to sum all voting powers
 
         uint256 length = _totalSupplyCheckpoints.length;
         if (length > 0 && _totalSupplyCheckpoints[length - 1].fromBlock == block.number) {

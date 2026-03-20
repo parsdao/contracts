@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity 0.8.23;
+pragma solidity 0.8.24;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -33,6 +33,14 @@ contract BondDepository is IBondDepository, Policy, ReentrancyGuard {
     error BondDepository_InvalidParams();
     error BondDepository_OnlyMarketOwner();
     error BondDepository_MarketConcluded();
+    error BondDepository_OnlyExecutor();
+
+    // =========  MODIFIERS ========= //
+
+    modifier onlyExecutor() {
+        if (msg.sender != kernel.executor()) revert BondDepository_OnlyExecutor();
+        _;
+    }
 
     // =========  EVENTS ========= //
 
@@ -127,7 +135,7 @@ contract BondDepository is IBondDepository, Policy, ReentrancyGuard {
         uint256 maxPayout_,
         uint256 depositInterval_,
         uint256 tuneInterval_
-    ) external override returns (uint256 id_) {
+    ) external override onlyExecutor returns (uint256 id_) {
         // Validate parameters
         if (address(quoteToken_) == address(0)) revert BondDepository_InvalidParams();
         if (capacity_ == 0) revert BondDepository_InvalidParams();
@@ -248,8 +256,7 @@ contract BondDepository is IBondDepository, Policy, ReentrancyGuard {
         market.quoteToken.safeTransferFrom(msg.sender, address(this), amount_);
 
         // Create bond note via teller
-        // In a full implementation, this would call teller.create()
-        index_ = 0; // Placeholder
+        index_ = teller.create(depositor_, payout_, expiry_, id_);
 
         emit BondPurchased(id_, depositor_, amount_, payout_, price);
 
@@ -348,8 +355,7 @@ contract BondDepository is IBondDepository, Policy, ReentrancyGuard {
      * @notice Set the teller contract.
      * @param  teller_ The teller address.
      */
-    function setTeller(address teller_) external {
-        // In a full implementation, this would be permissioned
+    function setTeller(address teller_) external onlyExecutor {
         teller = IBondTeller(teller_);
     }
 }

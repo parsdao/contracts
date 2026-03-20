@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity 0.8.23;
+pragma solidity 0.8.24;
 
 import {IBondPricing, IBondDepository} from "../interfaces/IBonds.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
@@ -277,20 +277,6 @@ contract BondPricing is IBondPricing, AccessControl {
     // =========  INTERNAL ========= //
 
     function _getMarket(uint256 marketId_) internal view returns (IBondDepository.Market memory) {
-        // Note: This requires the depository to expose getMarket()
-        // In the actual implementation, we'd call depository.getMarket(marketId_)
-        // For now, return empty struct
-        return IBondDepository.Market({
-            capacity: 0,
-            quoteToken: IERC20(address(0)),
-            capacityInQuote: false,
-            totalDebt: 0,
-            maxPayout: 0,
-            sold: 0,
-            purchased: 0
-        });
+        return depository.getMarket(marketId_);
     }
 }
-
-// Import for Market struct
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";

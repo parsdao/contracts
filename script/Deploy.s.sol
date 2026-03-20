@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity 0.8.23;
+pragma solidity 0.8.24;
 
 import {Script, console2} from "forge-std/Script.sol";
-import {Kernel} from "../src/Kernel.sol";
+import {Kernel, Actions} from "../src/Kernel.sol";
 import {PARS} from "../src/tokens/PARS.sol";
 import {xPARS} from "../src/tokens/xPARS.sol";
 import {vePARS} from "../src/tokens/vePARS.sol";
@@ -101,8 +101,9 @@ contract DeployPars is Script {
         vepars = new vePARS(address(xpars));
         console2.log("vePARS deployed:", address(vepars));
 
-        // 6. Deploy Treasury
+        // 6. Deploy Treasury and register as kernel module
         treasury = new Treasury(kernel);
+        kernel.executeAction(Actions.InstallModule, address(treasury));
         console2.log("Treasury deployed:", address(treasury));
 
         // 8. Deploy FeeRouter

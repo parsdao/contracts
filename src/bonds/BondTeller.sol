@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity 0.8.23;
+pragma solidity 0.8.24;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -30,6 +30,7 @@ contract BondTeller is IBondTeller, Policy, ReentrancyGuard {
     error BondTeller_AlreadyRedeemed();
     error BondTeller_InvalidIndex();
     error BondTeller_OnlyDepository();
+    error BondTeller_OnlyExecutor();
 
     // =========  EVENTS ========= //
 
@@ -91,6 +92,11 @@ contract BondTeller is IBondTeller, Policy, ReentrancyGuard {
 
     modifier onlyDepository() {
         if (msg.sender != address(depository)) revert BondTeller_OnlyDepository();
+        _;
+    }
+
+    modifier onlyExecutor() {
+        if (msg.sender != kernel.executor()) revert BondTeller_OnlyExecutor();
         _;
     }
 
@@ -310,8 +316,7 @@ contract BondTeller is IBondTeller, Policy, ReentrancyGuard {
      * @notice Set the depository contract.
      * @param  depository_ The depository address.
      */
-    function setDepository(address depository_) external {
-        // In a full implementation, this would be permissioned
+    function setDepository(address depository_) external onlyExecutor {
         depository = IBondDepository(depository_);
     }
 }
