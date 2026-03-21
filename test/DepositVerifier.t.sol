@@ -188,8 +188,8 @@ contract DepositVerifierTest is Test {
         vm.prank(alice);
         verifier.claim(proofs[0], deposit);
 
-        // Verify: 10,000,000 sats * 1e18 / 100 = 1e23 tokens
-        uint256 expectedTokens = (10_000_000 * 1e18) / SATS_PER_TOKEN;
+        // Verify: 10,000,000 sats * 1e9 / 100 = 1e14 tokens
+        uint256 expectedTokens = (10_000_000 * 1e9) / SATS_PER_TOKEN;
         assertEq(token.balanceOf(alice), expectedTokens);
         assertTrue(verifier.isClaimed(keccak256("btc_tx_1")));
 
@@ -215,12 +215,12 @@ contract DepositVerifierTest is Test {
         // Alice claims
         vm.prank(alice);
         verifier.claim(proofs[0], d1);
-        assertEq(token.balanceOf(alice), (3_800_000 * 1e18) / SATS_PER_TOKEN);
+        assertEq(token.balanceOf(alice), (3_800_000 * 1e9) / SATS_PER_TOKEN);
 
         // Bob claims
         vm.prank(bob);
         verifier.claim(proofs[1], d2);
-        assertEq(token.balanceOf(bob), (180_000 * 1e18) / SATS_PER_TOKEN);
+        assertEq(token.balanceOf(bob), (180_000 * 1e9) / SATS_PER_TOKEN);
     }
 
     function test_claim_thirdPartyCanClaim() public {
@@ -238,7 +238,7 @@ contract DepositVerifierTest is Test {
         vm.prank(bob); // Bob calls claim, tokens go to alice
         verifier.claim(proofs[0], deposit);
 
-        uint256 expectedTokens = (5_000_000 * 1e18) / SATS_PER_TOKEN;
+        uint256 expectedTokens = (5_000_000 * 1e9) / SATS_PER_TOKEN;
         assertEq(token.balanceOf(alice), expectedTokens);
         assertEq(token.balanceOf(bob), 0);
     }
@@ -348,8 +348,8 @@ contract DepositVerifierTest is Test {
         vm.prank(alice);
         verifier.claimBatch(proofs, deposits);
 
-        assertEq(token.balanceOf(alice), (5_000_000 * 1e18) / SATS_PER_TOKEN);
-        assertEq(token.balanceOf(bob), (1_900_000 * 1e18) / SATS_PER_TOKEN);
+        assertEq(token.balanceOf(alice), (5_000_000 * 1e9) / SATS_PER_TOKEN);
+        assertEq(token.balanceOf(bob), (1_900_000 * 1e9) / SATS_PER_TOKEN);
         assertTrue(verifier.isClaimed(keccak256("batch_tx_1")));
         assertTrue(verifier.isClaimed(keccak256("batch_tx_2")));
     }
@@ -443,7 +443,7 @@ contract DepositVerifierTest is Test {
         verifier.claim(proofs1[0], d1);
 
         uint256 tokensAtRate100 = token.balanceOf(alice);
-        assertEq(tokensAtRate100, (10_000 * 1e18) / 100);
+        assertEq(tokensAtRate100, (10_000 * 1e9) / 100);
 
         // Change rate to 200
         vm.prank(admin);
@@ -463,7 +463,7 @@ contract DepositVerifierTest is Test {
         verifier.claim(proofs2[0], d2);
 
         uint256 tokensAtRate200 = token.balanceOf(bob);
-        assertEq(tokensAtRate200, (10_000 * 1e18) / 200);
+        assertEq(tokensAtRate200, (10_000 * 1e9) / 200);
 
         // Half the tokens at double the rate
         assertEq(tokensAtRate100, tokensAtRate200 * 2);
@@ -482,14 +482,14 @@ contract DepositVerifierTest is Test {
     }
 
     function test_calculateMint() public view {
-        // 10,000 sats at 100 sats/token = 100 tokens (100e18)
-        assertEq(verifier.calculateMint(10_000), 100e18);
+        // 10,000 sats at 100 sats/token = 100 tokens (100e9)
+        assertEq(verifier.calculateMint(10_000), 100e9);
 
-        // 1 sat at 100 sats/token = 0.01 tokens (1e16)
-        assertEq(verifier.calculateMint(1), 1e16);
+        // 1 sat at 100 sats/token = 0.01 tokens (1e7)
+        assertEq(verifier.calculateMint(1), 1e7);
 
         // 100,000,000 sats (1 BTC) at 100 sats/token = 1,000,000 tokens
-        assertEq(verifier.calculateMint(100_000_000), 1_000_000e18);
+        assertEq(verifier.calculateMint(100_000_000), 1_000_000e9);
     }
 
     // =========  PAUSE / UNPAUSE ========= //
@@ -619,7 +619,7 @@ contract DepositVerifierTest is Test {
 
         assertEq(config.totalRaised(), 7_000_000);
         uint256 expectedMinted =
-            (5_000_000 * 1e18) / SATS_PER_TOKEN + (2_000_000 * 1e18) / SATS_PER_TOKEN;
+            (5_000_000 * 1e9) / SATS_PER_TOKEN + (2_000_000 * 1e9) / SATS_PER_TOKEN;
         assertEq(config.totalMinted(), expectedMinted);
     }
 
@@ -664,8 +664,8 @@ contract DepositVerifierTest is Test {
         vm.prank(relayer);
         verifier.processDeposit(txHash, BTC, alice, 5_000_000, block.timestamp);
 
-        // Verify mint: 5,000,000 sats * 1e18 / 100 = 5e22
-        uint256 expectedTokens = (5_000_000 * 1e18) / SATS_PER_TOKEN;
+        // Verify mint: 5,000,000 sats * 1e9 / 100 = 5e13
+        uint256 expectedTokens = (5_000_000 * 1e9) / SATS_PER_TOKEN;
         assertEq(token.balanceOf(alice), expectedTokens);
         assertTrue(verifier.isClaimed(txHash));
 
@@ -688,7 +688,7 @@ contract DepositVerifierTest is Test {
         vm.stopPrank();
 
         uint256 totalSats = 100_000 + 200_000 + 300_000 + 400_000 + 500_000 + 600_000 + 700_000;
-        uint256 expectedTokens = (totalSats * 1e18) / SATS_PER_TOKEN;
+        uint256 expectedTokens = (totalSats * 1e9) / SATS_PER_TOKEN;
         assertEq(token.balanceOf(alice), expectedTokens);
         assertEq(config.totalRaised(), totalSats);
     }
@@ -737,7 +737,7 @@ contract DepositVerifierTest is Test {
 
     function test_processDeposit_emitsEvent() public {
         bytes32 txHash = keccak256("event_direct_tx");
-        uint256 expectedTokens = (2_000_000 * 1e18) / SATS_PER_TOKEN;
+        uint256 expectedTokens = (2_000_000 * 1e9) / SATS_PER_TOKEN;
 
         vm.expectEmit(true, true, false, true);
         emit IDepositVerifier.DepositClaimed(alice, txHash, ETH, 2_000_000, expectedTokens);
@@ -778,11 +778,11 @@ contract DepositVerifierTest is Test {
         verifier.processDepositBatch(txHashes, chains, depositors, amounts, times);
 
         // Alice: 1M + 3M = 4M sats worth of tokens
-        uint256 aliceExpected = ((1_000_000 + 3_000_000) * 1e18) / SATS_PER_TOKEN;
+        uint256 aliceExpected = ((1_000_000 + 3_000_000) * 1e9) / SATS_PER_TOKEN;
         assertEq(token.balanceOf(alice), aliceExpected);
 
         // Bob: 2M sats worth of tokens
-        uint256 bobExpected = (2_000_000 * 1e18) / SATS_PER_TOKEN;
+        uint256 bobExpected = (2_000_000 * 1e9) / SATS_PER_TOKEN;
         assertEq(token.balanceOf(bob), bobExpected);
 
         // All marked as claimed
@@ -925,7 +925,7 @@ contract DepositVerifierTest is Test {
         vm.prank(alice);
         verifier.claim(proofs[0], deposit);
 
-        assertEq(token.balanceOf(alice), (360_000 * 1e18) / SATS_PER_TOKEN);
+        assertEq(token.balanceOf(alice), (360_000 * 1e9) / SATS_PER_TOKEN);
     }
 
     // =========  FUZZ TESTS ========= //
@@ -948,7 +948,7 @@ contract DepositVerifierTest is Test {
         vm.prank(alice);
         verifier.claim(proofs[0], deposit);
 
-        uint256 expectedTokens = (amountSats * 1e18) / SATS_PER_TOKEN;
+        uint256 expectedTokens = (amountSats * 1e9) / SATS_PER_TOKEN;
         assertEq(token.balanceOf(alice), expectedTokens);
         assertTrue(verifier.isClaimed(deposit.sourceTxHash));
     }
@@ -957,14 +957,14 @@ contract DepositVerifierTest is Test {
         sats = bound(sats, 1, 10_000_000_000);
         rate = bound(rate, 1, 1_000_000);
 
-        uint256 tokens = (sats * 1e18) / rate;
+        uint256 tokens = (sats * 1e9) / rate;
 
         // Tokens should always be > 0 if sats > 0 and rate > 0
         assertTrue(tokens > 0);
 
         // Tokens should decrease as rate increases
         if (rate > 1) {
-            uint256 tokensAtLowerRate = (sats * 1e18) / (rate - 1);
+            uint256 tokensAtLowerRate = (sats * 1e9) / (rate - 1);
             assertTrue(tokensAtLowerRate >= tokens);
         }
     }
@@ -982,7 +982,7 @@ contract DepositVerifierTest is Test {
         vm.prank(relayer);
         verifier.submitRoot(root, 1);
 
-        uint256 expectedTokens = (1_000_000 * 1e18) / SATS_PER_TOKEN;
+        uint256 expectedTokens = (1_000_000 * 1e9) / SATS_PER_TOKEN;
 
         vm.expectEmit(true, true, false, true);
         emit IDepositVerifier.DepositClaimed(alice, keccak256("event_tx"), BTC, 1_000_000, expectedTokens);
@@ -1008,7 +1008,7 @@ contract DepositVerifierTest is Test {
 contract MockMintable {
     string public name = "MockToken";
     string public symbol = "MOCK";
-    uint8 public decimals = 18;
+    uint8 public decimals = 9;
 
     mapping(address => uint256) public balanceOf;
     uint256 public totalSupply;

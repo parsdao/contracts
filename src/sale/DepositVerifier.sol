@@ -20,7 +20,7 @@ import {IMintable, ISaleConfig, IDepositVerifier} from "../interfaces/ISale.sol"
  *         their deposit's inclusion in a submitted root.
  *
  *         Mint calculation:
- *           tokensMinted = amountSats * 1e18 / satsPerToken
+ *           tokensMinted = amountSats * 1e9 / satsPerToken
  *
  *         Where amountSats is the BTC-equivalent value of the deposit (computed off-chain
  *         by the relay and baked into the merkle leaf), and satsPerToken is the current
@@ -65,8 +65,8 @@ contract DepositVerifier is AccessControl, Pausable, ReentrancyGuard, IDepositVe
     /// @notice The token to mint for depositors.
     address public mintToken;
 
-    /// @notice Satoshis per 1 token (with 1e18 precision for the token).
-    /// @dev    tokensMinted = amountSats * 1e18 / satsPerToken
+    /// @notice Satoshis per 1 token (with 1e9 precision for the token).
+    /// @dev    tokensMinted = amountSats * 1e9 / satsPerToken
     uint256 public satsPerToken;
 
     /// @notice Sale configuration contract.
@@ -240,8 +240,8 @@ contract DepositVerifier is AccessControl, Pausable, ReentrancyGuard, IDepositVe
         if (claimed[sourceTxHash]) revert DepositVerifier_AlreadyClaimed(sourceTxHash);
         claimed[sourceTxHash] = true;
 
-        // Calculate mint amount: tokensMinted = amountSats * 1e18 / satsPerToken
-        uint256 mintAmount = (amountSats * 1e18) / satsPerToken;
+        // Calculate mint amount: tokensMinted = amountSats * 1e9 / satsPerToken
+        uint256 mintAmount = (amountSats * 1e9) / satsPerToken;
 
         // Mint tokens
         IMintable(mintToken).mint(depositor, mintAmount);
@@ -294,8 +294,8 @@ contract DepositVerifier is AccessControl, Pausable, ReentrancyGuard, IDepositVe
         claimed[deposit.sourceTxHash] = true;
 
         // Calculate tokens to mint
-        // tokensMinted = amountSats * 1e18 / satsPerToken
-        uint256 tokensMinted = (deposit.amountSats * 1e18) / satsPerToken;
+        // tokensMinted = amountSats * 1e9 / satsPerToken
+        uint256 tokensMinted = (deposit.amountSats * 1e9) / satsPerToken;
 
         // Mint tokens to depositor
         IMintable(mintToken).mint(deposit.depositor, tokensMinted);
@@ -316,7 +316,7 @@ contract DepositVerifier is AccessControl, Pausable, ReentrancyGuard, IDepositVe
 
     /**
      * @notice Set the sats-per-token mint rate.
-     * @dev    tokensMinted = amountSats * 1e18 / satsPerToken
+     * @dev    tokensMinted = amountSats * 1e9 / satsPerToken
      * @param  satsPerToken_ New rate (e.g., 100 means 1 token = 100 sats).
      */
     function setMintRate(uint256 satsPerToken_) external override onlyRole(ADMIN_ROLE) {
@@ -384,6 +384,6 @@ contract DepositVerifier is AccessControl, Pausable, ReentrancyGuard, IDepositVe
      * @return The number of tokens that would be minted.
      */
     function calculateMint(uint256 amountSats) external view returns (uint256) {
-        return (amountSats * 1e18) / satsPerToken;
+        return (amountSats * 1e9) / satsPerToken;
     }
 }
