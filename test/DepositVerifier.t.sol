@@ -656,6 +656,231 @@ contract DepositVerifierTest is Test {
         config.recordSale(1_000_000, 1e18);
     }
 
+    // =========  PROCESS DEPOSIT (DIRECT RELAY) ========= //
+
+    function test_processDeposit_success() public {
+        bytes32 txHash = keccak256("direct_btc_tx_1");
+
+        vm.prank(relayer);
+        verifier.processDeposit(txHash, BTC, alice, 5_000_000, block.timestamp);
+
+        // Verify mint: 5,000,000 sats * 1e18 / 100 = 5e22
+        uint256 expectedTokens = (5_000_000 * 1e18) / SATS_PER_TOKEN;
+        assertEq(token.balanceOf(alice), expectedTokens);
+        assertTrue(verifier.isClaimed(txHash));
+
+        // Verify sale config totals
+        assertEq(config.totalRaised(), 5_000_000);
+        assertEq(config.totalMinted(), expectedTokens);
+    }
+
+    function test_processDeposit_allChains() public {
+        vm.startPrank(relayer);
+
+        verifier.processDeposit(keccak256("d_btc"), BTC, alice, 100_000, block.timestamp);
+        verifier.processDeposit(keccak256("d_eth"), ETH, alice, 200_000, block.timestamp);
+        verifier.processDeposit(keccak256("d_sol"), SOL, alice, 300_000, block.timestamp);
+        verifier.processDeposit(keccak256("d_ton"), TON, alice, 400_000, block.timestamp);
+        verifier.processDeposit(keccak256("d_xrp"), XRP, alice, 500_000, block.timestamp);
+        verifier.processDeposit(keccak256("d_lux"), LUX, alice, 600_000, block.timestamp);
+        verifier.processDeposit(keccak256("d_pars"), PARS, alice, 700_000, block.timestamp);
+
+        vm.stopPrank();
+
+        uint256 totalSats = 100_000 + 200_000 + 300_000 + 400_000 + 500_000 + 600_000 + 700_000;
+        uint256 expectedTokens = (totalSats * 1e18) / SATS_PER_TOKEN;
+        assertEq(token.balanceOf(alice), expectedTokens);
+        assertEq(config.totalRaised(), totalSats);
+    }
+
+    function test_processDeposit_revertDoubleProcess() public {
+        bytes32 txHash = keccak256("direct_btc_tx_dup");
+
+        vm.startPrank(relayer);
+        verifier.processDeposit(txHash, BTC, alice, 1_000_000, block.timestamp);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(DepositVerifier.DepositVerifier_AlreadyClaimed.selector, txHash)
+        );
+        verifier.processDeposit(txHash, BTC, alice, 1_000_000, block.timestamp);
+        vm.stopPrank();
+    }
+
+    function test_processDeposit_revertNotRelayer() public {
+        vm.prank(attacker);
+        vm.expectRevert();
+        verifier.processDeposit(keccak256("bad_tx"), BTC, alice, 1_000_000, block.timestamp);
+    }
+
+    function test_processDeposit_revertWhenPaused() public {
+        vm.prank(admin);
+        verifier.pause();
+
+        vm.prank(relayer);
+        vm.expectRevert();
+        verifier.processDeposit(keccak256("paused_tx"), BTC, alice, 1_000_000, block.timestamp);
+    }
+
+    function test_processDeposit_revertZeroAmount() public {
+        vm.prank(relayer);
+        vm.expectRevert(DepositVerifier.DepositVerifier_ZeroAmount.selector);
+        verifier.processDeposit(keccak256("zero_tx_d"), BTC, alice, 0, block.timestamp);
+    }
+
+    function test_processDeposit_revertInvalidChain() public {
+        vm.prank(relayer);
+        vm.expectRevert(
+            abi.encodeWithSelector(DepositVerifier.DepositVerifier_InvalidChain.selector, 7)
+        );
+        verifier.processDeposit(keccak256("bad_chain_d"), 7, alice, 1_000_000, block.timestamp);
+    }
+
+    function test_processDeposit_emitsEvent() public {
+        bytes32 txHash = keccak256("event_direct_tx");
+        uint256 expectedTokens = (2_000_000 * 1e18) / SATS_PER_TOKEN;
+
+        vm.expectEmit(true, true, false, true);
+        emit IDepositVerifier.DepositClaimed(alice, txHash, ETH, 2_000_000, expectedTokens);
+
+        vm.prank(relayer);
+        verifier.processDeposit(txHash, ETH, alice, 2_000_000, block.timestamp);
+    }
+
+    // =========  PROCESS DEPOSIT BATCH ========= //
+
+    function test_processDepositBatch_success() public {
+        bytes32[] memory txHashes = new bytes32[](3);
+        txHashes[0] = keccak256("batch_d_1");
+        txHashes[1] = keccak256("batch_d_2");
+        txHashes[2] = keccak256("batch_d_3");
+
+        uint8[] memory chains = new uint8[](3);
+        chains[0] = BTC;
+        chains[1] = ETH;
+        chains[2] = SOL;
+
+        address[] memory depositors = new address[](3);
+        depositors[0] = alice;
+        depositors[1] = bob;
+        depositors[2] = alice;
+
+        uint256[] memory amounts = new uint256[](3);
+        amounts[0] = 1_000_000;
+        amounts[1] = 2_000_000;
+        amounts[2] = 3_000_000;
+
+        uint256[] memory times = new uint256[](3);
+        times[0] = block.timestamp;
+        times[1] = block.timestamp;
+        times[2] = block.timestamp;
+
+        vm.prank(relayer);
+        verifier.processDepositBatch(txHashes, chains, depositors, amounts, times);
+
+        // Alice: 1M + 3M = 4M sats worth of tokens
+        uint256 aliceExpected = ((1_000_000 + 3_000_000) * 1e18) / SATS_PER_TOKEN;
+        assertEq(token.balanceOf(alice), aliceExpected);
+
+        // Bob: 2M sats worth of tokens
+        uint256 bobExpected = (2_000_000 * 1e18) / SATS_PER_TOKEN;
+        assertEq(token.balanceOf(bob), bobExpected);
+
+        // All marked as claimed
+        assertTrue(verifier.isClaimed(keccak256("batch_d_1")));
+        assertTrue(verifier.isClaimed(keccak256("batch_d_2")));
+        assertTrue(verifier.isClaimed(keccak256("batch_d_3")));
+
+        // Sale config totals
+        assertEq(config.totalRaised(), 6_000_000);
+    }
+
+    function test_processDepositBatch_revertLengthMismatch() public {
+        bytes32[] memory txHashes = new bytes32[](2);
+        uint8[] memory chains = new uint8[](1); // mismatch
+        address[] memory depositors = new address[](2);
+        uint256[] memory amounts = new uint256[](2);
+        uint256[] memory times = new uint256[](2);
+
+        vm.prank(relayer);
+        vm.expectRevert(DepositVerifier.DepositVerifier_LengthMismatch.selector);
+        verifier.processDepositBatch(txHashes, chains, depositors, amounts, times);
+    }
+
+    function test_processDepositBatch_revertNotRelayer() public {
+        bytes32[] memory txHashes = new bytes32[](1);
+        txHashes[0] = keccak256("batch_bad");
+        uint8[] memory chains = new uint8[](1);
+        address[] memory depositors = new address[](1);
+        depositors[0] = alice;
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = 1_000_000;
+        uint256[] memory times = new uint256[](1);
+        times[0] = block.timestamp;
+
+        vm.prank(attacker);
+        vm.expectRevert();
+        verifier.processDepositBatch(txHashes, chains, depositors, amounts, times);
+    }
+
+    function test_processDepositBatch_revertDuplicateInBatch() public {
+        bytes32[] memory txHashes = new bytes32[](2);
+        txHashes[0] = keccak256("dup_batch_tx");
+        txHashes[1] = keccak256("dup_batch_tx"); // same hash
+
+        uint8[] memory chains = new uint8[](2);
+        chains[0] = BTC;
+        chains[1] = BTC;
+
+        address[] memory depositors = new address[](2);
+        depositors[0] = alice;
+        depositors[1] = bob;
+
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = 1_000_000;
+        amounts[1] = 2_000_000;
+
+        uint256[] memory times = new uint256[](2);
+        times[0] = block.timestamp;
+        times[1] = block.timestamp;
+
+        vm.prank(relayer);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                DepositVerifier.DepositVerifier_AlreadyClaimed.selector,
+                keccak256("dup_batch_tx")
+            )
+        );
+        verifier.processDepositBatch(txHashes, chains, depositors, amounts, times);
+    }
+
+    // =========  CROSS-PATH: processDeposit blocks merkle claim ========= //
+
+    function test_processDeposit_blocksMerkleClaim() public {
+        // Process deposit directly
+        bytes32 txHash = keccak256("cross_tx_1");
+        vm.prank(relayer);
+        verifier.processDeposit(txHash, BTC, alice, 1_000_000, block.timestamp);
+
+        // Try to merkle-claim the same tx hash -- should revert
+        IDepositVerifier.Deposit memory deposit =
+            _makeDeposit(txHash, BTC, alice, 1_000_000, block.timestamp);
+
+        IDepositVerifier.Deposit[] memory deposits = new IDepositVerifier.Deposit[](1);
+        deposits[0] = deposit;
+        (bytes32 root,, bytes32[][] memory proofs) = _buildTree(deposits);
+
+        vm.prank(relayer);
+        verifier.submitRoot(root, 1);
+
+        vm.prank(alice);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                DepositVerifier.DepositVerifier_AlreadyClaimed.selector, txHash
+            )
+        );
+        verifier.claim(proofs[0], deposit);
+    }
+
     // =========  EDGE CASES ========= //
 
     function test_claim_revertZeroAmount() public {

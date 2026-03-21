@@ -169,6 +169,89 @@ contract DepositVerifier is AccessControl, Pausable, ReentrancyGuard, IDepositVe
         }
     }
 
+    // =========  DIRECT RELAY FUNCTIONS ========= //
+
+    /**
+     * @notice Direct deposit processing by authorized relayer (simple mode).
+     * @dev    Called by the relay service after verifying the source chain tx.
+     *         Bypasses merkle proof — the relayer is trusted to have verified the deposit.
+     * @param  sourceTxHash The transaction hash on the source chain.
+     * @param  sourceChain  The source chain enum (0=BTC, 1=ETH, 2=SOL, 3=TON, 4=XRP, 5=LUX, 6=PARS).
+     * @param  depositor    The Pars address to mint tokens to.
+     * @param  amountSats   The deposit amount in BTC-equivalent satoshis.
+     * @param  depositTime  The timestamp of the source chain tx.
+     */
+    function processDeposit(
+        bytes32 sourceTxHash,
+        uint8 sourceChain,
+        address depositor,
+        uint256 amountSats,
+        uint256 depositTime
+    ) external onlyRole(RELAYER_ROLE) whenNotPaused nonReentrant {
+        _processDeposit(sourceTxHash, sourceChain, depositor, amountSats, depositTime);
+    }
+
+    /**
+     * @notice Batch-process multiple deposits in a single transaction.
+     * @dev    All arrays must have the same length.
+     * @param  sourceTxHashes Array of source chain transaction hashes.
+     * @param  sourceChains   Array of source chain enum values.
+     * @param  depositors     Array of Pars addresses to mint tokens to.
+     * @param  amountsSats    Array of deposit amounts in BTC-equivalent satoshis.
+     * @param  depositTimes   Array of source chain tx timestamps.
+     */
+    function processDepositBatch(
+        bytes32[] calldata sourceTxHashes,
+        uint8[] calldata sourceChains,
+        address[] calldata depositors,
+        uint256[] calldata amountsSats,
+        uint256[] calldata depositTimes
+    ) external onlyRole(RELAYER_ROLE) whenNotPaused nonReentrant {
+        uint256 len = sourceTxHashes.length;
+        if (
+            len != sourceChains.length || len != depositors.length || len != amountsSats.length
+                || len != depositTimes.length
+        ) revert DepositVerifier_LengthMismatch();
+
+        for (uint256 i = 0; i < len; i++) {
+            _processDeposit(
+                sourceTxHashes[i], sourceChains[i], depositors[i], amountsSats[i], depositTimes[i]
+            );
+        }
+    }
+
+    /**
+     * @notice Internal logic for direct deposit processing.
+     */
+    function _processDeposit(
+        bytes32 sourceTxHash,
+        uint8 sourceChain,
+        address depositor,
+        uint256 amountSats,
+        uint256 depositTime
+    ) internal {
+        // Validate chain
+        if (sourceChain > 6) revert DepositVerifier_InvalidChain(sourceChain);
+
+        // Validate amount
+        if (amountSats == 0) revert DepositVerifier_ZeroAmount();
+
+        // Prevent double-processing
+        if (claimed[sourceTxHash]) revert DepositVerifier_AlreadyClaimed(sourceTxHash);
+        claimed[sourceTxHash] = true;
+
+        // Calculate mint amount: tokensMinted = amountSats * 1e18 / satsPerToken
+        uint256 mintAmount = (amountSats * 1e18) / satsPerToken;
+
+        // Mint tokens
+        IMintable(mintToken).mint(depositor, mintAmount);
+
+        // Record in sale config
+        saleConfig.recordSale(amountSats, mintAmount);
+
+        emit DepositClaimed(depositor, sourceTxHash, sourceChain, amountSats, mintAmount);
+    }
+
     // =========  INTERNAL ========= //
 
     /**

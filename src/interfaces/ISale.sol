@@ -110,6 +110,24 @@ interface IDepositVerifier {
     /// @notice Batch claim multiple deposits.
     function claimBatch(bytes32[][] calldata proofs, Deposit[] calldata deposits) external;
 
+    /// @notice Direct deposit processing by authorized relayer.
+    function processDeposit(
+        bytes32 sourceTxHash,
+        uint8 sourceChain,
+        address depositor,
+        uint256 amountSats,
+        uint256 depositTime
+    ) external;
+
+    /// @notice Batch-process multiple deposits in a single transaction.
+    function processDepositBatch(
+        bytes32[] calldata sourceTxHashes,
+        uint8[] calldata sourceChains,
+        address[] calldata depositors,
+        uint256[] calldata amountsSats,
+        uint256[] calldata depositTimes
+    ) external;
+
     /// @notice Set the sats-per-token mint rate.
     function setMintRate(uint256 satsPerToken) external;
 
