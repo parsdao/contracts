@@ -9,7 +9,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  * @notice Interfaces for the Pars bonding system.
  * @dev    Oraghe (اوراقه) = Bond in Persian
  *
- *         Bonds allow users to purchase PARS at a discount by providing
+ *         Bonds allow users to purchase ASHA at a discount by providing
  *         liquidity or reserve assets to the protocol treasury.
  */
 
@@ -105,7 +105,7 @@ interface IBondTeller {
 
     /// @notice Bond note (ownership of bond payout).
     struct Note {
-        uint256 payout;          // PARS to be paid
+        uint256 payout;          // ASHA to be paid
         uint256 created;         // Creation timestamp
         uint256 matured;         // Maturity timestamp
         uint256 redeemed;        // Amount already redeemed
@@ -140,7 +140,7 @@ interface IBondTeller {
  * @notice Interface for bond price oracle.
  */
 interface IBondPricing {
-    /// @notice Get the current PARS price in a quote token.
+    /// @notice Get the current ASHA price in a quote token.
     function currentPrice(address quoteToken_) external view returns (uint256);
 
     /// @notice Get the market price for a bond market.

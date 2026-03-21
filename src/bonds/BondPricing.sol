@@ -11,7 +11,7 @@ import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
  * @dev    Qeymat Oraghe (قیمت اوراقه) = Bond Pricing in Persian
  *
  *         The Bond Pricing contract:
- *         - Provides PARS price feeds for bond markets
+ *         - Provides ASHA price feeds for bond markets
  *         - Calculates discounts based on market conditions
  *         - Integrates with external oracles
  *         - Supports multiple quote tokens
@@ -51,7 +51,7 @@ contract BondPricing is IBondPricing, AccessControl {
 
     /// @notice Price data for a quote token.
     struct PriceData {
-        uint256 price;       // PARS price in quote token (scaled by PRICE_PRECISION)
+        uint256 price;       // ASHA price in quote token (scaled by PRICE_PRECISION)
         uint256 timestamp;   // Last update timestamp
         address oracle;      // Optional Chainlink oracle address
     }
@@ -86,10 +86,10 @@ contract BondPricing is IBondPricing, AccessControl {
     // =========  PRICE FUNCTIONS ========= //
 
     /**
-     * @notice Get the current PARS price in a quote token.
+     * @notice Get the current ASHA price in a quote token.
      * @dev    Qeymat Konuni (قیمت کنونی) = Current Price in Persian
      * @param  quoteToken_ The quote token address.
-     * @return The PARS price (scaled by PRICE_PRECISION).
+     * @return The ASHA price (scaled by PRICE_PRECISION).
      */
     function currentPrice(address quoteToken_) external view override returns (uint256) {
         if (!isSupported[quoteToken_]) revert BondPricing_UnsupportedToken();

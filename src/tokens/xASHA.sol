@@ -5,44 +5,44 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {ERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IxPARS} from "../interfaces/IPARS.sol";
+import {IxASHA} from "../interfaces/IASHA.sol";
 
 /**
- * @title  xPARS Token
+ * @title  xASHA Token
  * @author Pars Protocol
- * @notice Staked PARS token with rebasing mechanism.
- * @dev    xPARS represents staked PARS that accrues rebase rewards over time.
+ * @notice Staked ASHA token with rebasing mechanism.
+ * @dev    xASHA represents staked ASHA that accrues rebase rewards over time.
  *         The rebase mechanism distributes protocol profits to stakers by
- *         increasing the index, which increases the PARS value of each xPARS.
+ *         increasing the index, which increases the ASHA value of each xASHA.
  *
- *         xPARS = Staked Pars
+ *         xASHA = Staked Asha
  *         Equivalent to sOHM in Olympus
  *
  *         Key mechanics:
  *         - Index starts at 1e18 and increases with each rebase
- *         - xPARS balance * index / 1e18 = underlying PARS value
+ *         - xASHA balance * index / 1e18 = underlying ASHA value
  *         - Rebases happen periodically (every epoch)
  */
-contract xPARS is ERC20, ERC20Permit, IxPARS {
+contract xASHA is ERC20, ERC20Permit, IxASHA {
     using SafeERC20 for IERC20;
 
     // =========  ERRORS ========= //
 
-    error xPARS_OnlyStaking();
-    error xPARS_InvalidAmount();
-    error xPARS_RebaseOverflow();
+    error xASHA_OnlyStaking();
+    error xASHA_InvalidAmount();
+    error xASHA_RebaseOverflow();
 
     // =========  STATE ========= //
 
-    /// @notice The PARS token contract.
-    IERC20 public immutable pars;
+    /// @notice The ASHA token contract.
+    IERC20 public immutable asha;
 
     /// @notice The staking contract that manages deposits/withdrawals.
     address public staking;
 
     /// @notice The rebase index (starts at 1e18).
     /// @dev    Index is scaled by 1e18 for precision.
-    ///         xPARS balance * index / 1e18 = PARS value
+    ///         xASHA balance * index / 1e18 = ASHA value
     uint256 public override index;
 
     /// @notice Rebases array for historical tracking.
@@ -52,7 +52,7 @@ contract xPARS is ERC20, ERC20Permit, IxPARS {
     struct Rebase {
         uint256 epoch;      // Epoch number
         uint256 rebase;     // Rebase percentage (scaled by 1e18)
-        uint256 totalStaked;// Total PARS staked at rebase
+        uint256 totalStaked;// Total ASHA staked at rebase
         uint256 index;      // Index after rebase
         uint256 timestamp;  // Block timestamp
     }
@@ -65,18 +65,18 @@ contract xPARS is ERC20, ERC20Permit, IxPARS {
     // =========  CONSTRUCTOR ========= //
 
     /**
-     * @notice Construct a new xPARS token.
-     * @param  pars_    The PARS token address.
+     * @notice Construct a new xASHA token.
+     * @param  asha_    The ASHA token address.
      * @param  staking_ The staking contract address.
      */
     constructor(
-        address pars_,
+        address asha_,
         address staking_
-    ) ERC20("Staked Pars", "xPARS") ERC20Permit("Staked Pars") {
-        require(pars_ != address(0), "xPARS: invalid PARS");
-        require(staking_ != address(0), "xPARS: invalid staking");
+    ) ERC20("Staked Asha", "xASHA") ERC20Permit("Staked Asha") {
+        require(asha_ != address(0), "xASHA: invalid ASHA");
+        require(staking_ != address(0), "xASHA: invalid staking");
 
-        pars = IERC20(pars_);
+        asha = IERC20(asha_);
         staking = staking_;
         index = INITIAL_INDEX;
     }
@@ -84,7 +84,7 @@ contract xPARS is ERC20, ERC20Permit, IxPARS {
     // =========  MODIFIERS ========= //
 
     modifier onlyStaking() {
-        if (msg.sender != staking) revert xPARS_OnlyStaking();
+        if (msg.sender != staking) revert xASHA_OnlyStaking();
         _;
     }
 
@@ -92,7 +92,7 @@ contract xPARS is ERC20, ERC20Permit, IxPARS {
 
     /**
      * @notice Returns the number of decimals for the token.
-     * @dev    xPARS uses 9 decimals to match PARS.
+     * @dev    xASHA uses 9 decimals to match ASHA.
      */
     function decimals() public pure override returns (uint8) {
         return 9;
@@ -101,25 +101,25 @@ contract xPARS is ERC20, ERC20Permit, IxPARS {
     // =========  STAKING FUNCTIONS ========= //
 
     /**
-     * @notice Mint xPARS tokens during staking.
-     * @dev    Called by staking contract when user stakes PARS.
-     *         Calculates xPARS amount based on current index.
+     * @notice Mint xASHA tokens during staking.
+     * @dev    Called by staking contract when user stakes ASHA.
+     *         Calculates xASHA amount based on current index.
      * @param  to_     The address to mint to.
-     * @param  amount_ The amount of xPARS to mint (in xPARS terms).
+     * @param  amount_ The amount of xASHA to mint (in xASHA terms).
      */
     function mint(address to_, uint256 amount_) external override onlyStaking {
-        if (amount_ == 0) revert xPARS_InvalidAmount();
+        if (amount_ == 0) revert xASHA_InvalidAmount();
         _mint(to_, amount_);
     }
 
     /**
-     * @notice Burn xPARS tokens during unstaking.
+     * @notice Burn xASHA tokens during unstaking.
      * @dev    Called by staking contract when user unstakes.
      * @param  from_   The address to burn from.
-     * @param  amount_ The amount of xPARS to burn.
+     * @param  amount_ The amount of xASHA to burn.
      */
     function burn(address from_, uint256 amount_) external override onlyStaking {
-        if (amount_ == 0) revert xPARS_InvalidAmount();
+        if (amount_ == 0) revert xASHA_InvalidAmount();
         _burn(from_, amount_);
     }
 
@@ -132,7 +132,7 @@ contract xPARS is ERC20, ERC20Permit, IxPARS {
      *
      *         Rebase (بازتوزیع) = Redistribution in Persian
      *
-     * @param  profit_ The amount of PARS profit to distribute.
+     * @param  profit_ The amount of ASHA profit to distribute.
      */
     function rebase(uint256 profit_) external override onlyStaking {
         uint256 totalStaked = circulatingSupply();
@@ -150,7 +150,7 @@ contract xPARS is ERC20, ERC20Permit, IxPARS {
         uint256 newIndex = (index * (1e18 + rebasePercent)) / 1e18;
 
         // Overflow check
-        if (newIndex < index) revert xPARS_RebaseOverflow();
+        if (newIndex < index) revert xASHA_RebaseOverflow();
 
         index = newIndex;
 
@@ -167,29 +167,29 @@ contract xPARS is ERC20, ERC20Permit, IxPARS {
     // =========  VIEW FUNCTIONS ========= //
 
     /**
-     * @notice Convert xPARS amount to underlying PARS amount.
-     * @dev    PARS = xPARS * index / 1e18
-     * @param  amount_ The xPARS amount to convert.
-     * @return The equivalent PARS amount.
+     * @notice Convert xASHA amount to underlying ASHA amount.
+     * @dev    ASHA = xASHA * index / 1e18
+     * @param  amount_ The xASHA amount to convert.
+     * @return The equivalent ASHA amount.
      */
     function balanceFrom(uint256 amount_) public view override returns (uint256) {
         return (amount_ * index) / 1e18;
     }
 
     /**
-     * @notice Convert PARS amount to xPARS amount.
-     * @dev    xPARS = PARS * 1e18 / index
-     * @param  amount_ The PARS amount to convert.
-     * @return The equivalent xPARS amount.
+     * @notice Convert ASHA amount to xASHA amount.
+     * @dev    xASHA = ASHA * 1e18 / index
+     * @param  amount_ The ASHA amount to convert.
+     * @return The equivalent xASHA amount.
      */
     function balanceTo(uint256 amount_) public view override returns (uint256) {
         return (amount_ * 1e18) / index;
     }
 
     /**
-     * @notice Get the circulating supply of xPARS in PARS terms.
-     * @dev    Returns total xPARS supply converted to PARS value.
-     * @return The circulating supply in PARS.
+     * @notice Get the circulating supply of xASHA in ASHA terms.
+     * @dev    Returns total xASHA supply converted to ASHA value.
+     * @return The circulating supply in ASHA.
      */
     function circulatingSupply() public view override returns (uint256) {
         return balanceFrom(totalSupply());
@@ -221,7 +221,7 @@ contract xPARS is ERC20, ERC20Permit, IxPARS {
      * @param  newStaking_ The new staking contract address.
      */
     function setStaking(address newStaking_) external onlyStaking {
-        require(newStaking_ != address(0), "xPARS: invalid staking");
+        require(newStaking_ != address(0), "xASHA: invalid staking");
         staking = newStaking_;
     }
 }

@@ -2,14 +2,14 @@
 pragma solidity 0.8.24;
 
 import {Test} from "forge-std/Test.sol";
-import {PARS, IParsAuthority} from "../src/tokens/PARS.sol";
+import {ASHA, IParsAuthority} from "../src/tokens/ASHA.sol";
 
 /**
- * @title  PARS Token Tests
- * @notice Test suite for the PARS governance token.
+ * @title  ASHA Token Tests
+ * @notice Test suite for the ASHA governance/reserve token.
  */
-contract PARSTest is Test {
-    PARS public pars;
+contract ASHATest is Test {
+    ASHA public asha;
     MockAuthority public authority;
 
     address public governor = address(1);
@@ -23,51 +23,51 @@ contract PARSTest is Test {
         // Deploy mock authority
         authority = new MockAuthority(governor, guardian, policy, vault);
 
-        // Deploy PARS token
-        pars = new PARS(address(authority));
+        // Deploy ASHA token
+        asha = new ASHA(address(authority));
     }
 
     // =========  BASIC TESTS ========= //
 
     function test_name() public view {
-        assertEq(pars.name(), "Pars");
+        assertEq(asha.name(), "Asha");
     }
 
     function test_symbol() public view {
-        assertEq(pars.symbol(), "PARS");
+        assertEq(asha.symbol(), "ASHA");
     }
 
     function test_decimals() public view {
-        assertEq(pars.decimals(), 9);
+        assertEq(asha.decimals(), 9);
     }
 
     function test_initialSupply() public view {
-        assertEq(pars.totalSupply(), 0);
+        assertEq(asha.totalSupply(), 0);
     }
 
     // =========  MINT TESTS ========= //
 
     function test_mint_onlyVault() public {
         vm.prank(vault);
-        pars.mint(alice, 1000e9);
-        assertEq(pars.balanceOf(alice), 1000e9);
+        asha.mint(alice, 1000e9);
+        assertEq(asha.balanceOf(alice), 1000e9);
     }
 
     function test_mint_revertNotVault() public {
-        vm.expectRevert(PARS.PARS_OnlyVault.selector);
+        vm.expectRevert(ASHA.ASHA_OnlyVault.selector);
         vm.prank(alice);
-        pars.mint(alice, 1000e9);
+        asha.mint(alice, 1000e9);
     }
 
     function test_mint_multipleRecipients() public {
         vm.startPrank(vault);
-        pars.mint(alice, 1000e9);
-        pars.mint(bob, 2000e9);
+        asha.mint(alice, 1000e9);
+        asha.mint(bob, 2000e9);
         vm.stopPrank();
 
-        assertEq(pars.balanceOf(alice), 1000e9);
-        assertEq(pars.balanceOf(bob), 2000e9);
-        assertEq(pars.totalSupply(), 3000e9);
+        assertEq(asha.balanceOf(alice), 1000e9);
+        assertEq(asha.balanceOf(bob), 2000e9);
+        assertEq(asha.totalSupply(), 3000e9);
     }
 
     // =========  BURN TESTS ========= //
@@ -75,59 +75,59 @@ contract PARSTest is Test {
     function test_burn() public {
         // Mint first
         vm.prank(vault);
-        pars.mint(alice, 1000e9);
+        asha.mint(alice, 1000e9);
 
         // Burn
         vm.prank(alice);
-        pars.burn(400e9);
+        asha.burn(400e9);
 
-        assertEq(pars.balanceOf(alice), 600e9);
-        assertEq(pars.totalSupply(), 600e9);
+        assertEq(asha.balanceOf(alice), 600e9);
+        assertEq(asha.totalSupply(), 600e9);
     }
 
     function test_burnFrom_withApproval() public {
         // Mint first
         vm.prank(vault);
-        pars.mint(alice, 1000e9);
+        asha.mint(alice, 1000e9);
 
         // Approve bob
         vm.prank(alice);
-        pars.approve(bob, 500e9);
+        asha.approve(bob, 500e9);
 
         // Burn from alice
         vm.prank(bob);
-        pars.burnFrom(alice, 500e9);
+        asha.burnFrom(alice, 500e9);
 
-        assertEq(pars.balanceOf(alice), 500e9);
-        assertEq(pars.allowance(alice, bob), 0);
+        assertEq(asha.balanceOf(alice), 500e9);
+        assertEq(asha.allowance(alice, bob), 0);
     }
 
     // =========  TRANSFER TESTS ========= //
 
     function test_transfer() public {
         vm.prank(vault);
-        pars.mint(alice, 1000e9);
+        asha.mint(alice, 1000e9);
 
         vm.prank(alice);
-        pars.transfer(bob, 300e9);
+        asha.transfer(bob, 300e9);
 
-        assertEq(pars.balanceOf(alice), 700e9);
-        assertEq(pars.balanceOf(bob), 300e9);
+        assertEq(asha.balanceOf(alice), 700e9);
+        assertEq(asha.balanceOf(bob), 300e9);
     }
 
     function test_transferFrom() public {
         vm.prank(vault);
-        pars.mint(alice, 1000e9);
+        asha.mint(alice, 1000e9);
 
         vm.prank(alice);
-        pars.approve(bob, 500e9);
+        asha.approve(bob, 500e9);
 
         vm.prank(bob);
-        pars.transferFrom(alice, bob, 400e9);
+        asha.transferFrom(alice, bob, 400e9);
 
-        assertEq(pars.balanceOf(alice), 600e9);
-        assertEq(pars.balanceOf(bob), 400e9);
-        assertEq(pars.allowance(alice, bob), 100e9);
+        assertEq(asha.balanceOf(alice), 600e9);
+        assertEq(asha.balanceOf(bob), 400e9);
+        assertEq(asha.allowance(alice, bob), 100e9);
     }
 
     // =========  AUTHORITY TESTS ========= //
@@ -141,9 +141,9 @@ contract PARSTest is Test {
         );
 
         vm.prank(governor);
-        pars.setAuthority(IParsAuthority(address(newAuthority)));
+        asha.setAuthority(IParsAuthority(address(newAuthority)));
 
-        assertEq(address(pars.authority()), address(newAuthority));
+        assertEq(address(asha.authority()), address(newAuthority));
     }
 
     function test_setAuthority_revertNotGovernor() public {
@@ -154,9 +154,9 @@ contract PARSTest is Test {
             vault
         );
 
-        vm.expectRevert(PARS.PARS_OnlyGovernor.selector);
+        vm.expectRevert(ASHA.ASHA_OnlyGovernor.selector);
         vm.prank(alice);
-        pars.setAuthority(IParsAuthority(address(newAuthority)));
+        asha.setAuthority(IParsAuthority(address(newAuthority)));
     }
 
     // =========  FUZZ TESTS ========= //
@@ -165,10 +165,10 @@ contract PARSTest is Test {
         vm.assume(amount > 0 && amount < type(uint128).max);
 
         vm.prank(vault);
-        pars.mint(alice, amount);
+        asha.mint(alice, amount);
 
-        assertEq(pars.balanceOf(alice), amount);
-        assertEq(pars.totalSupply(), amount);
+        assertEq(asha.balanceOf(alice), amount);
+        assertEq(asha.totalSupply(), amount);
     }
 
     function testFuzz_transfer(uint256 mintAmount, uint256 transferAmount) public {
@@ -176,13 +176,13 @@ contract PARSTest is Test {
         vm.assume(transferAmount > 0 && transferAmount <= mintAmount);
 
         vm.prank(vault);
-        pars.mint(alice, mintAmount);
+        asha.mint(alice, mintAmount);
 
         vm.prank(alice);
-        pars.transfer(bob, transferAmount);
+        asha.transfer(bob, transferAmount);
 
-        assertEq(pars.balanceOf(alice), mintAmount - transferAmount);
-        assertEq(pars.balanceOf(bob), transferAmount);
+        assertEq(asha.balanceOf(alice), mintAmount - transferAmount);
+        assertEq(asha.balanceOf(bob), transferAmount);
     }
 }
 

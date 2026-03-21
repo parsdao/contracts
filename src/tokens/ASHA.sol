@@ -5,29 +5,31 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {ERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 import {ERC20Votes} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
 import {Nonces} from "@openzeppelin/contracts/utils/Nonces.sol";
-import {IPARS} from "../interfaces/IPARS.sol";
+import {IASHA} from "../interfaces/IASHA.sol";
 
 /**
- * @title  PARS Token
+ * @title  ASHA Token
  * @author Pars Protocol
- * @notice The main governance token of the Pars Protocol.
- * @dev    PARS is the native token of the Pars Network, used for:
- *         - Protocol governance through vePARS
- *         - Staking rewards via xPARS
+ * @notice The governance/reserve token of the Pars Protocol.
+ * @dev    ASHA is the governance/reserve token (like OHM on Olympus), used for:
+ *         - Protocol governance through veASHA
+ *         - Staking rewards via xASHA
  *         - Treasury backing and protocol-owned liquidity
  *
- *         Pars (پارس) = Persia/Persian
+ *         PARS is the native coin of Pars Network (like ETH) and is NOT an ERC20.
+ *
+ *         Asha (آشا) = Truth/Righteousness in Avestan
  *         Token Decimals: 9 (following Olympus convention)
  *
  *         Mint permissions are controlled by the Pars Authority system.
  */
-contract PARS is ERC20, ERC20Permit, ERC20Votes, IPARS {
+contract ASHA is ERC20, ERC20Permit, ERC20Votes, IASHA {
     // =========  ERRORS ========= //
 
-    error PARS_OnlyVault();
-    error PARS_OnlyGovernor();
-    error PARS_OnlyGuardian();
-    error PARS_Unauthorized();
+    error ASHA_OnlyVault();
+    error ASHA_OnlyGovernor();
+    error ASHA_OnlyGuardian();
+    error ASHA_Unauthorized();
 
     // =========  STATE ========= //
 
@@ -37,24 +39,24 @@ contract PARS is ERC20, ERC20Permit, ERC20Votes, IPARS {
     // =========  CONSTRUCTOR ========= //
 
     /**
-     * @notice Construct a new PARS token.
+     * @notice Construct a new ASHA token.
      * @param  authority_ The address of the Pars Authority contract.
      */
     constructor(
         address authority_
-    ) ERC20("Pars", "PARS") ERC20Permit("Pars") {
+    ) ERC20("Asha", "ASHA") ERC20Permit("Asha") {
         authority = IParsAuthority(authority_);
     }
 
     // =========  MODIFIERS ========= //
 
     modifier onlyVault() {
-        if (msg.sender != authority.vault()) revert PARS_OnlyVault();
+        if (msg.sender != authority.vault()) revert ASHA_OnlyVault();
         _;
     }
 
     modifier onlyGovernor() {
-        if (msg.sender != authority.governor()) revert PARS_OnlyGovernor();
+        if (msg.sender != authority.governor()) revert ASHA_OnlyGovernor();
         _;
     }
 
@@ -62,7 +64,7 @@ contract PARS is ERC20, ERC20Permit, ERC20Votes, IPARS {
 
     /**
      * @notice Returns the number of decimals for the token.
-     * @dev    PARS uses 9 decimals (following Olympus convention).
+     * @dev    ASHA uses 9 decimals (following Olympus convention).
      * @return The number of decimals (9).
      */
     function decimals() public pure override returns (uint8) {
@@ -72,7 +74,7 @@ contract PARS is ERC20, ERC20Permit, ERC20Votes, IPARS {
     // =========  MINT / BURN ========= //
 
     /**
-     * @notice Mint PARS tokens to an address.
+     * @notice Mint ASHA tokens to an address.
      * @dev    Only callable by the vault (Treasury/Staking).
      *         Zarb (ضرب) = Mint in Persian
      * @param  account_ The address to mint tokens to.
@@ -83,7 +85,7 @@ contract PARS is ERC20, ERC20Permit, ERC20Votes, IPARS {
     }
 
     /**
-     * @notice Burn PARS tokens from the caller's balance.
+     * @notice Burn ASHA tokens from the caller's balance.
      * @dev    Suzandan (سوزاندن) = Burn in Persian
      * @param  amount_ The amount of tokens to burn.
      */
@@ -92,7 +94,7 @@ contract PARS is ERC20, ERC20Permit, ERC20Votes, IPARS {
     }
 
     /**
-     * @notice Burn PARS tokens from an address with approval.
+     * @notice Burn ASHA tokens from an address with approval.
      * @param  account_ The address to burn tokens from.
      * @param  amount_  The amount of tokens to burn.
      */

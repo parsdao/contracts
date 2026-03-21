@@ -3,9 +3,9 @@ pragma solidity 0.8.24;
 
 import {Script, console2} from "forge-std/Script.sol";
 import {Kernel, Actions} from "../src/Kernel.sol";
-import {PARS} from "../src/tokens/PARS.sol";
-import {xPARS} from "../src/tokens/xPARS.sol";
-import {vePARS} from "../src/tokens/vePARS.sol";
+import {ASHA} from "../src/tokens/ASHA.sol";
+import {xASHA} from "../src/tokens/xASHA.sol";
+import {veASHA} from "../src/tokens/veASHA.sol";
 import {MIGA} from "../src/tokens/MIGA.sol";
 import {Treasury} from "../src/treasury/Treasury.sol";
 import {FeeRouter} from "../src/treasury/FeeRouter.sol";
@@ -38,8 +38,8 @@ contract DeployLocal is Script {
     uint256 public constant APPROVAL_THRESHOLD = 60_000_000;
     uint256 public constant TIMELOCK_DELAY = 1 days;
 
-    // PARS decimals = 9, mint 1B for testing
-    uint256 public constant INITIAL_PARS_SUPPLY = 1_000_000_000 * 1e9;
+    // ASHA decimals = 9, mint 1B for testing
+    uint256 public constant INITIAL_ASHA_SUPPLY = 1_000_000_000 * 1e9;
     // DAI decimals = 18, mint 10M for testing
     uint256 public constant INITIAL_DAI_SUPPLY = 10_000_000 * 1e18;
 
@@ -47,9 +47,9 @@ contract DeployLocal is Script {
 
     Kernel public kernel;
     ParsAuthority public authority;
-    PARS public pars;
-    xPARS public xpars;
-    vePARS public vepars;
+    ASHA public asha;
+    xASHA public xasha;
+    veASHA public veasha;
     MIGA public miga;
     Treasury public treasury;
     FeeRouter public feeRouter;
@@ -72,14 +72,14 @@ contract DeployLocal is Script {
         // 2. Authority (deployer gets all roles initially)
         authority = new ParsAuthority(deployer, deployer, deployer, deployer);
 
-        // 3. PARS token
-        pars = new PARS(address(authority));
+        // 3. ASHA token
+        asha = new ASHA(address(authority));
 
-        // 4. xPARS (staking placeholder = deployer)
-        xpars = new xPARS(address(pars), deployer);
+        // 4. xASHA (staking placeholder = deployer)
+        xasha = new xASHA(address(asha), deployer);
 
-        // 5. vePARS
-        vepars = new vePARS(address(xpars));
+        // 5. veASHA
+        veasha = new veASHA(address(xasha));
 
         // 6. MIGA
         miga = new MIGA(deployer);
@@ -106,8 +106,8 @@ contract DeployLocal is Script {
         dai = new MockDAI();
         dai.mint(deployer, INITIAL_DAI_SUPPLY);
 
-        // Mint initial PARS supply to deployer (via authority vault role)
-        pars.mint(deployer, INITIAL_PARS_SUPPLY);
+        // Mint initial ASHA supply to deployer (via authority vault role)
+        asha.mint(deployer, INITIAL_ASHA_SUPPLY);
 
         vm.stopBroadcast();
 
@@ -118,9 +118,9 @@ contract DeployLocal is Script {
         console2.log("\n=== Deployment Complete ===");
         console2.log("Kernel:    ", address(kernel));
         console2.log("Authority: ", address(authority));
-        console2.log("PARS:      ", address(pars));
-        console2.log("xPARS:     ", address(xpars));
-        console2.log("vePARS:    ", address(vepars));
+        console2.log("ASHA:      ", address(asha));
+        console2.log("xASHA:     ", address(xasha));
+        console2.log("veASHA:    ", address(veasha));
         console2.log("MIGA:      ", address(miga));
         console2.log("Treasury:  ", address(treasury));
         console2.log("FeeRouter: ", address(feeRouter));
@@ -132,9 +132,9 @@ contract DeployLocal is Script {
         string memory obj = "deployment";
         vm.serializeAddress(obj, "kernel", address(kernel));
         vm.serializeAddress(obj, "authority", address(authority));
-        vm.serializeAddress(obj, "pars", address(pars));
-        vm.serializeAddress(obj, "xpars", address(xpars));
-        vm.serializeAddress(obj, "vepars", address(vepars));
+        vm.serializeAddress(obj, "asha", address(asha));
+        vm.serializeAddress(obj, "xasha", address(xasha));
+        vm.serializeAddress(obj, "veasha", address(veasha));
         vm.serializeAddress(obj, "miga", address(miga));
         vm.serializeAddress(obj, "treasury", address(treasury));
         vm.serializeAddress(obj, "feeRouter", address(feeRouter));

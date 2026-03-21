@@ -3,9 +3,9 @@ pragma solidity 0.8.24;
 
 import {Script, console2} from "forge-std/Script.sol";
 import {Kernel, Actions} from "../src/Kernel.sol";
-import {PARS} from "../src/tokens/PARS.sol";
-import {xPARS} from "../src/tokens/xPARS.sol";
-import {vePARS} from "../src/tokens/vePARS.sol";
+import {ASHA} from "../src/tokens/ASHA.sol";
+import {xASHA} from "../src/tokens/xASHA.sol";
+import {veASHA} from "../src/tokens/veASHA.sol";
 import {Treasury} from "../src/treasury/Treasury.sol";
 import {FeeRouter} from "../src/treasury/FeeRouter.sol";
 import {Charter} from "../src/governance/Charter.sol";
@@ -19,9 +19,9 @@ import {Charter} from "../src/governance/Charter.sol";
  *         Deployment order:
  *         1. Kernel - Central registry
  *         2. Authority - Permission management
- *         3. PARS - Governance token
- *         4. xPARS - Staked token
- *         5. vePARS - Vote-escrow token
+ *         3. ASHA - Governance/reserve token
+ *         4. xASHA - Staked token
+ *         5. veASHA - Vote-escrow token
  *         6. Treasury - Reserve management
  *         8. FeeRouter - Fee distribution
  *         9. Charter - Governance parameters
@@ -59,9 +59,9 @@ contract DeployPars is Script {
 
     Kernel public kernel;
     ParsAuthority public authority;
-    PARS public pars;
-    xPARS public xpars;
-    vePARS public vepars;
+    ASHA public asha;
+    xASHA public xasha;
+    veASHA public veasha;
     Treasury public treasury;
     FeeRouter public feeRouter;
     Charter public charter;
@@ -87,19 +87,19 @@ contract DeployPars is Script {
         authority = new ParsAuthority(deployer, deployer, deployer, deployer);
         console2.log("Authority deployed:", address(authority));
 
-        // 3. Deploy PARS token
-        pars = new PARS(address(authority));
-        console2.log("PARS deployed:", address(pars));
+        // 3. Deploy ASHA token
+        asha = new ASHA(address(authority));
+        console2.log("ASHA deployed:", address(asha));
 
-        // 4. Deploy Staking (placeholder for xPARS)
-        // Note: xPARS requires staking contract, deploy a placeholder first
+        // 4. Deploy Staking (placeholder for xASHA)
+        // Note: xASHA requires staking contract, deploy a placeholder first
         address stakingPlaceholder = deployer; // Temporary
-        xpars = new xPARS(address(pars), stakingPlaceholder);
-        console2.log("xPARS deployed:", address(xpars));
+        xasha = new xASHA(address(asha), stakingPlaceholder);
+        console2.log("xASHA deployed:", address(xasha));
 
-        // 5. Deploy vePARS
-        vepars = new vePARS(address(xpars));
-        console2.log("vePARS deployed:", address(vepars));
+        // 5. Deploy veASHA
+        veasha = new veASHA(address(xasha));
+        console2.log("veASHA deployed:", address(veasha));
 
         // 6. Deploy Treasury and register as kernel module
         treasury = new Treasury(kernel);
@@ -128,9 +128,9 @@ contract DeployPars is Script {
         console2.log("\n=== Deployment Summary ===");
         console2.log("Kernel:    ", address(kernel));
         console2.log("Authority: ", address(authority));
-        console2.log("PARS:      ", address(pars));
-        console2.log("xPARS:     ", address(xpars));
-        console2.log("vePARS:    ", address(vepars));
+        console2.log("ASHA:      ", address(asha));
+        console2.log("xASHA:     ", address(xasha));
+        console2.log("veASHA:    ", address(veasha));
         console2.log("Treasury:  ", address(treasury));
         console2.log("FeeRouter: ", address(feeRouter));
         console2.log("Charter:   ", address(charter));

@@ -15,7 +15,7 @@ import {Kernel, Policy, Keycode, toKeycode, Permissions} from "../Kernel.sol";
  *
  *         The Bond Depository:
  *         - Creates and manages bond markets
- *         - Accepts quote tokens for discounted PARS
+ *         - Accepts quote tokens for discounted ASHA
  *         - Uses Sequential Dutch Auction (SDA) pricing
  *         - Supports multiple concurrent markets
  *
@@ -72,8 +72,8 @@ contract BondDepository is IBondDepository, Policy, ReentrancyGuard {
 
     // =========  STATE ========= //
 
-    /// @notice PARS token address.
-    IERC20 public immutable pars;
+    /// @notice ASHA token address.
+    IERC20 public immutable asha;
 
     /// @notice Bond teller contract.
     IBondTeller public teller;
@@ -98,11 +98,11 @@ contract BondDepository is IBondDepository, Policy, ReentrancyGuard {
     /**
      * @notice Construct a new Bond Depository.
      * @param  kernel_ The kernel contract address.
-     * @param  pars_   The PARS token address.
+     * @param  asha_   The ASHA token address.
      */
-    constructor(Kernel kernel_, address pars_) Policy(kernel_) {
-        require(pars_ != address(0), "BondDepository: invalid PARS");
-        pars = IERC20(pars_);
+    constructor(Kernel kernel_, address asha_) Policy(kernel_) {
+        require(asha_ != address(0), "BondDepository: invalid ASHA");
+        asha = IERC20(asha_);
     }
 
     // =========  POLICY SETUP ========= //
@@ -209,7 +209,7 @@ contract BondDepository is IBondDepository, Policy, ReentrancyGuard {
      * @param  maxPrice_  Maximum acceptable price.
      * @param  depositor_ The address to receive the bond.
      * @param  referrer_  Optional referrer address.
-     * @return payout_    The PARS payout amount.
+     * @return payout_    The ASHA payout amount.
      * @return expiry_    The bond expiry timestamp.
      * @return index_     The bond index for the depositor.
      */
@@ -282,7 +282,7 @@ contract BondDepository is IBondDepository, Policy, ReentrancyGuard {
      * @dev    Pardakht (پرداخت) = Payout in Persian
      * @param  amount_ The quote token amount.
      * @param  id_     The market ID.
-     * @return The PARS payout amount.
+     * @return The ASHA payout amount.
      */
     function payoutFor(uint256 amount_, uint256 id_) public view override returns (uint256) {
         uint256 price = marketPrice(id_);

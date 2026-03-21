@@ -3,7 +3,7 @@ pragma solidity 0.8.24;
 
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {ICouncil, ITimelock} from "../interfaces/IGovernance.sol";
-import {IvePARS} from "../interfaces/IPARS.sol";
+import {IveASHA} from "../interfaces/IASHA.sol";
 import {Kernel, Policy, Keycode, toKeycode, Permissions} from "../Kernel.sol";
 
 /**
@@ -16,7 +16,7 @@ import {Kernel, Policy, Keycode, toKeycode, Permissions} from "../Kernel.sol";
  *         Based on Governor Bravo architecture with Pars-specific modifications.
  *
  *         Key features:
- *         - vePARS-based voting (time-weighted voting power)
+ *         - veASHA-based voting (time-weighted voting power)
  *         - Dynamic quorum based on total supply
  *         - Emergency proposal mechanism
  *         - Veto guardian for security
@@ -143,7 +143,7 @@ contract Council is ICouncil, Policy {
     /// @notice Maximum voting delay (~1 week).
     uint256 public constant MAX_VOTING_DELAY = 302_400;
 
-    /// @notice Minimum vePARS supply for normal operations.
+    /// @notice Minimum veASHA supply for normal operations.
     uint256 public constant MIN_SUPPLY = 1_000e9;
 
     /// @notice Quorum percentage (20% of supply).
@@ -171,8 +171,8 @@ contract Council is ICouncil, Policy {
     /// @notice The timelock contract.
     ITimelock public timelock;
 
-    /// @notice The vePARS token for voting.
-    IvePARS public vepars;
+    /// @notice The veASHA token for voting.
+    IveASHA public vepars;
 
     /// @notice The kernel address.
     address public kernelAddress;
@@ -234,7 +234,7 @@ contract Council is ICouncil, Policy {
     /**
      * @notice Initialize the Council contract.
      * @param  timelock_             The timelock contract address.
-     * @param  vepars_               The vePARS token address.
+     * @param  vepars_               The veASHA token address.
      * @param  kernel_               The kernel address.
      * @param  vetoGuardian_         The veto guardian address.
      * @param  votingPeriod_         The voting period in blocks.
@@ -270,7 +270,7 @@ contract Council is ICouncil, Policy {
         ) revert Council_InvalidThreshold();
 
         timelock = ITimelock(timelock_);
-        vepars = IvePARS(vepars_);
+        vepars = IveASHA(vepars_);
         kernelAddress = kernel_;
         vetoGuardian = vetoGuardian_;
         votingDelay = votingDelay_;

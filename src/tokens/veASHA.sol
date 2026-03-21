@@ -4,23 +4,23 @@ pragma solidity 0.8.24;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {IvePARS, IxPARS} from "../interfaces/IPARS.sol";
+import {IveASHA, IxASHA} from "../interfaces/IASHA.sol";
 
 /**
- * @title  vePARS Token
+ * @title  veASHA Token
  * @author Pars Protocol
- * @notice Vote-escrow PARS governance token.
- * @dev    vePARS is the non-transferable governance token obtained by locking xPARS.
+ * @notice Vote-escrow ASHA governance token.
+ * @dev    veASHA is the non-transferable governance token obtained by locking xASHA.
  *         Implements vote-escrow mechanics similar to Curve's veCRV.
  *
  *         Key mechanics:
- *         - Lock xPARS for 1 week to 4 years
+ *         - Lock xASHA for 1 week to 4 years
  *         - Voting power = locked_amount * time_remaining / max_lock_time
  *         - Voting power decays linearly to 0 at lock expiry
  *         - Can extend lock or increase amount at any time
- *         - Cannot transfer or trade vePARS
+ *         - Cannot transfer or trade veASHA
  *
- *         vePARS = Vote-Escrow Pars
+ *         veASHA = Vote-Escrow Asha
  *         Ray (رای) = Vote in Persian
  *
  *         Used for:
@@ -29,20 +29,20 @@ import {IvePARS, IxPARS} from "../interfaces/IPARS.sol";
  *         - Proposal creation and voting
  *         - Fee distribution rights
  */
-contract vePARS is IvePARS, ReentrancyGuard {
+contract veASHA is IveASHA, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     // =========  ERRORS ========= //
 
-    error vePARS_InvalidAmount();
-    error vePARS_InvalidDuration();
-    error vePARS_LockNotExpired();
-    error vePARS_NoExistingLock();
-    error vePARS_LockAlreadyExists();
-    error vePARS_LockExpired();
-    error vePARS_MaxLockExceeded();
-    error vePARS_NotTransferable();
-    error vePARS_InvalidDelegatee();
+    error veASHA_InvalidAmount();
+    error veASHA_InvalidDuration();
+    error veASHA_LockNotExpired();
+    error veASHA_NoExistingLock();
+    error veASHA_LockAlreadyExists();
+    error veASHA_LockExpired();
+    error veASHA_MaxLockExceeded();
+    error veASHA_NotTransferable();
+    error veASHA_InvalidDelegatee();
 
     // =========  EVENTS ========= //
 
@@ -56,7 +56,7 @@ contract vePARS is IvePARS, ReentrancyGuard {
 
     /// @notice Internal lock storage.
     struct Lock {
-        uint128 amount;   // Locked xPARS amount
+        uint128 amount;   // Locked xASHA amount
         uint128 end;      // Lock end timestamp
     }
 
@@ -68,16 +68,16 @@ contract vePARS is IvePARS, ReentrancyGuard {
 
     // =========  STATE ========= //
 
-    /// @notice The xPARS token contract.
-    IxPARS public immutable xpars;
+    /// @notice The xASHA token contract.
+    IxASHA public immutable xasha;
 
     /// @notice Name of the token (for EIP-712).
-    string public constant name = "Vote-Escrow Pars";
+    string public constant name = "Vote-Escrow Asha";
 
     /// @notice Symbol of the token.
-    string public constant symbol = "vePARS";
+    string public constant symbol = "veASHA";
 
-    /// @notice Decimals (matches xPARS).
+    /// @notice Decimals (matches xASHA).
     uint8 public constant decimals = 9;
 
     /// @notice Minimum lock duration (1 week).
@@ -104,30 +104,30 @@ contract vePARS is IvePARS, ReentrancyGuard {
     // =========  CONSTRUCTOR ========= //
 
     /**
-     * @notice Construct a new vePARS token.
-     * @param  xpars_ The xPARS token address.
+     * @notice Construct a new veASHA token.
+     * @param  xasha_ The xASHA token address.
      */
-    constructor(address xpars_) {
-        require(xpars_ != address(0), "vePARS: invalid xPARS");
-        xpars = IxPARS(xpars_);
+    constructor(address xasha_) {
+        require(xasha_ != address(0), "veASHA: invalid xASHA");
+        xasha = IxASHA(xasha_);
     }
 
     // =========  LOCK FUNCTIONS ========= //
 
     /**
-     * @notice Create a new lock by depositing xPARS.
+     * @notice Create a new lock by depositing xASHA.
      * @dev    Qofl (قفل) = Lock in Persian
-     * @param  amount_   The amount of xPARS to lock.
+     * @param  amount_   The amount of xASHA to lock.
      * @param  duration_ The lock duration in seconds.
      */
     function createLock(uint256 amount_, uint256 duration_) external override nonReentrant {
-        if (amount_ == 0) revert vePARS_InvalidAmount();
+        if (amount_ == 0) revert veASHA_InvalidAmount();
         if (duration_ < MIN_LOCK_DURATION || duration_ > MAX_LOCK_DURATION) {
-            revert vePARS_InvalidDuration();
+            revert veASHA_InvalidDuration();
         }
 
         Lock storage lock = _locks[msg.sender];
-        if (lock.amount > 0) revert vePARS_LockAlreadyExists(); // Use increaseAmount instead
+        if (lock.amount > 0) revert veASHA_LockAlreadyExists(); // Use increaseAmount instead
 
         // Round down to epoch boundary
         uint256 lockEnd = _roundDownToEpoch(block.timestamp + duration_);
@@ -136,8 +136,8 @@ contract vePARS is IvePARS, ReentrancyGuard {
         lock.amount = uint128(amount_);
         lock.end = uint128(lockEnd);
 
-        // Transfer xPARS
-        IERC20(address(xpars)).safeTransferFrom(msg.sender, address(this), amount_);
+        // Transfer xASHA
+        IERC20(address(xasha)).safeTransferFrom(msg.sender, address(this), amount_);
 
         // Update voting power checkpoints
         _writeCheckpoint(msg.sender, _getVotes(msg.sender));
@@ -147,20 +147,20 @@ contract vePARS is IvePARS, ReentrancyGuard {
     }
 
     /**
-     * @notice Increase the amount of xPARS in an existing lock.
-     * @param  amount_ The additional amount of xPARS to lock.
+     * @notice Increase the amount of xASHA in an existing lock.
+     * @param  amount_ The additional amount of xASHA to lock.
      */
     function increaseAmount(uint256 amount_) external override nonReentrant {
-        if (amount_ == 0) revert vePARS_InvalidAmount();
+        if (amount_ == 0) revert veASHA_InvalidAmount();
 
         Lock storage lock = _locks[msg.sender];
-        if (lock.amount == 0) revert vePARS_NoExistingLock();
-        if (block.timestamp >= lock.end) revert vePARS_LockExpired();
+        if (lock.amount == 0) revert veASHA_NoExistingLock();
+        if (block.timestamp >= lock.end) revert veASHA_LockExpired();
 
         lock.amount += uint128(amount_);
 
-        // Transfer xPARS
-        IERC20(address(xpars)).safeTransferFrom(msg.sender, address(this), amount_);
+        // Transfer xASHA
+        IERC20(address(xasha)).safeTransferFrom(msg.sender, address(this), amount_);
 
         // Update voting power checkpoints
         _writeCheckpoint(msg.sender, _getVotes(msg.sender));
@@ -175,14 +175,14 @@ contract vePARS is IvePARS, ReentrancyGuard {
      */
     function extendLock(uint256 additionalDuration_) external override nonReentrant {
         Lock storage lock = _locks[msg.sender];
-        if (lock.amount == 0) revert vePARS_NoExistingLock();
-        if (block.timestamp >= lock.end) revert vePARS_LockExpired();
+        if (lock.amount == 0) revert veASHA_NoExistingLock();
+        if (block.timestamp >= lock.end) revert veASHA_LockExpired();
 
         uint256 newEnd = _roundDownToEpoch(lock.end + additionalDuration_);
         uint256 maxEnd = _roundDownToEpoch(block.timestamp + MAX_LOCK_DURATION);
 
-        if (newEnd > maxEnd) revert vePARS_MaxLockExceeded();
-        if (newEnd <= lock.end) revert vePARS_InvalidDuration();
+        if (newEnd > maxEnd) revert veASHA_MaxLockExceeded();
+        if (newEnd <= lock.end) revert veASHA_InvalidDuration();
 
         lock.end = uint128(newEnd);
 
@@ -194,18 +194,18 @@ contract vePARS is IvePARS, ReentrancyGuard {
     }
 
     /**
-     * @notice Withdraw xPARS after lock has expired.
+     * @notice Withdraw xASHA after lock has expired.
      */
     function withdraw() external override nonReentrant {
         Lock storage lock = _locks[msg.sender];
-        if (lock.amount == 0) revert vePARS_NoExistingLock();
-        if (block.timestamp < lock.end) revert vePARS_LockNotExpired();
+        if (lock.amount == 0) revert veASHA_NoExistingLock();
+        if (block.timestamp < lock.end) revert veASHA_LockNotExpired();
 
         uint256 amount = lock.amount;
         delete _locks[msg.sender];
 
-        // Transfer xPARS back
-        IERC20(address(xpars)).safeTransfer(msg.sender, amount);
+        // Transfer xASHA back
+        IERC20(address(xasha)).safeTransfer(msg.sender, amount);
 
         // Update voting power checkpoints
         _writeCheckpoint(msg.sender, 0);
@@ -237,7 +237,7 @@ contract vePARS is IvePARS, ReentrancyGuard {
         address account_,
         uint256 blockNumber_
     ) external view override returns (uint256) {
-        require(blockNumber_ < block.number, "vePARS: not yet determined");
+        require(blockNumber_ < block.number, "veASHA: not yet determined");
 
         address delegatee = _delegates[account_];
         address effectiveAccount = delegatee == address(0) ? account_ : delegatee;
@@ -275,7 +275,7 @@ contract vePARS is IvePARS, ReentrancyGuard {
      * @param  delegatee_ The address to delegate to.
      */
     function delegate(address delegatee_) external override {
-        if (delegatee_ == msg.sender) revert vePARS_InvalidDelegatee();
+        if (delegatee_ == msg.sender) revert veASHA_InvalidDelegatee();
 
         address oldDelegatee = _delegates[msg.sender];
         _delegates[msg.sender] = delegatee_;
@@ -371,10 +371,10 @@ contract vePARS is IvePARS, ReentrancyGuard {
     }
 
     function _writeTotalSupplyCheckpoint() internal {
-        // WARNING: Uses raw xPARS balance as a proxy for total voting power. This overstates
+        // WARNING: Uses raw xASHA balance as a proxy for total voting power. This overstates
         // total supply because it does not apply the time-decay formula per lock. A production
         // implementation must iterate locks or maintain an incremental accumulator.
-        uint256 total = IERC20(address(xpars)).balanceOf(address(this));
+        uint256 total = IERC20(address(xasha)).balanceOf(address(this));
 
         uint256 length = _totalSupplyCheckpoints.length;
         if (length > 0 && _totalSupplyCheckpoints[length - 1].fromBlock == block.number) {
@@ -393,22 +393,22 @@ contract vePARS is IvePARS, ReentrancyGuard {
 
     // =========  NON-TRANSFERABLE ========= //
 
-    /// @notice vePARS is non-transferable.
+    /// @notice veASHA is non-transferable.
     function transfer(address, uint256) external pure returns (bool) {
-        revert vePARS_NotTransferable();
+        revert veASHA_NotTransferable();
     }
 
-    /// @notice vePARS is non-transferable.
+    /// @notice veASHA is non-transferable.
     function transferFrom(address, address, uint256) external pure returns (bool) {
-        revert vePARS_NotTransferable();
+        revert veASHA_NotTransferable();
     }
 
-    /// @notice vePARS cannot be approved for transfer.
+    /// @notice veASHA cannot be approved for transfer.
     function approve(address, uint256) external pure returns (bool) {
-        revert vePARS_NotTransferable();
+        revert veASHA_NotTransferable();
     }
 
-    /// @notice Returns the balance of vePARS (voting power).
+    /// @notice Returns the balance of veASHA (voting power).
     function balanceOf(address account_) external view returns (uint256) {
         return votingPower(account_);
     }

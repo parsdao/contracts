@@ -134,7 +134,7 @@ interface IFeeRouter {
 
 /**
  * @title  IMinter Interface
- * @notice Interface for the PARS minting module.
+ * @notice Interface for the ASHA minting module.
  */
 interface IMinter {
     // =========  EVENTS ========= //
@@ -160,11 +160,11 @@ interface IMinter {
 
     // =========  FUNCTIONS ========= //
 
-    /// @notice Mint PARS to an address.
-    function mintPars(address to, uint256 amount) external;
+    /// @notice Mint ASHA to an address.
+    function mintAsha(address to, uint256 amount) external;
 
-    /// @notice Burn PARS from an address.
-    function burnPars(address from, uint256 amount) external;
+    /// @notice Burn ASHA from an address.
+    function burnAsha(address from, uint256 amount) external;
 
     /// @notice Increase mint approval.
     function increaseMintApproval(address policy, uint256 amount) external;

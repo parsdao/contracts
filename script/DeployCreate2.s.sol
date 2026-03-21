@@ -3,9 +3,9 @@ pragma solidity 0.8.24;
 
 import {Script, console2} from "forge-std/Script.sol";
 import {Kernel} from "../src/Kernel.sol";
-import {PARS} from "../src/tokens/PARS.sol";
-import {xPARS} from "../src/tokens/xPARS.sol";
-import {vePARS} from "../src/tokens/vePARS.sol";
+import {ASHA} from "../src/tokens/ASHA.sol";
+import {xASHA} from "../src/tokens/xASHA.sol";
+import {veASHA} from "../src/tokens/veASHA.sol";
 import {MIGA} from "../src/tokens/MIGA.sol";
 import {Treasury} from "../src/treasury/Treasury.sol";
 import {FeeRouter} from "../src/treasury/FeeRouter.sol";
@@ -60,9 +60,9 @@ contract DeployParsCreate2 is Script {
 
     Kernel public kernel;
     ParsAuthority public authority;
-    PARS public pars;
-    xPARS public xpars;
-    vePARS public vepars;
+    ASHA public asha;
+    xASHA public xasha;
+    veASHA public veasha;
     MIGA public miga;
     Treasury public treasury;
     FeeRouter public feeRouter;
@@ -128,17 +128,17 @@ contract DeployParsCreate2 is Script {
         );
         console2.log("Authority:", address(authority));
 
-        // 3. Deploy PARS token (CREATE2)
-        pars = new PARS{salt: _salt("PARS")}(address(authority));
-        console2.log("PARS:", address(pars));
+        // 3. Deploy ASHA token (CREATE2)
+        asha = new ASHA{salt: _salt("ASHA")}(address(authority));
+        console2.log("ASHA:", address(asha));
 
-        // 4. Deploy xPARS (CREATE2)
-        xpars = new xPARS{salt: _salt("xPARS")}(address(pars), deployer);
-        console2.log("xPARS:", address(xpars));
+        // 4. Deploy xASHA (CREATE2)
+        xasha = new xASHA{salt: _salt("xASHA")}(address(asha), deployer);
+        console2.log("xASHA:", address(xasha));
 
-        // 5. Deploy vePARS (CREATE2)
-        vepars = new vePARS{salt: _salt("vePARS")}(address(xpars));
-        console2.log("vePARS:", address(vepars));
+        // 5. Deploy veASHA (CREATE2)
+        veasha = new veASHA{salt: _salt("veASHA")}(address(xasha));
+        console2.log("veASHA:", address(veasha));
 
         // 6. Deploy MIGA (CREATE2)
         miga = new MIGA{salt: _salt("MIGA")}(deployer);
@@ -174,9 +174,9 @@ contract DeployParsCreate2 is Script {
         console2.log("");
         console2.log("Kernel:    ", address(kernel));
         console2.log("Authority: ", address(authority));
-        console2.log("PARS:      ", address(pars));
-        console2.log("xPARS:     ", address(xpars));
-        console2.log("vePARS:    ", address(vepars));
+        console2.log("ASHA:      ", address(asha));
+        console2.log("xASHA:     ", address(xasha));
+        console2.log("veASHA:    ", address(veasha));
         console2.log("MIGA:      ", address(miga));
         console2.log("Treasury:  ", address(treasury));
         console2.log("FeeRouter: ", address(feeRouter));

@@ -49,8 +49,8 @@ contract BondTeller is IBondTeller, Policy, ReentrancyGuard {
 
     // =========  STATE ========= //
 
-    /// @notice PARS token address.
-    IERC20 public immutable pars;
+    /// @notice ASHA token address.
+    IERC20 public immutable asha;
 
     /// @notice Bond depository contract.
     IBondDepository public depository;
@@ -61,7 +61,7 @@ contract BondTeller is IBondTeller, Policy, ReentrancyGuard {
     /// @notice Total bonds created.
     uint256 public totalBondsCreated;
 
-    /// @notice Total PARS paid out.
+    /// @notice Total ASHA paid out.
     uint256 public totalPaidOut;
 
     // =========  CONSTRUCTOR ========= //
@@ -69,11 +69,11 @@ contract BondTeller is IBondTeller, Policy, ReentrancyGuard {
     /**
      * @notice Construct a new Bond Teller.
      * @param  kernel_ The kernel contract address.
-     * @param  pars_   The PARS token address.
+     * @param  asha_   The ASHA token address.
      */
-    constructor(Kernel kernel_, address pars_) Policy(kernel_) {
-        require(pars_ != address(0), "BondTeller: invalid PARS");
-        pars = IERC20(pars_);
+    constructor(Kernel kernel_, address asha_) Policy(kernel_) {
+        require(asha_ != address(0), "BondTeller: invalid ASHA");
+        asha = IERC20(asha_);
     }
 
     // =========  POLICY SETUP ========= //
@@ -106,7 +106,7 @@ contract BondTeller is IBondTeller, Policy, ReentrancyGuard {
      * @notice Create a bond note (called by depository).
      * @dev    Ijad Oraghe (ایجاد اوراقه) = Create Bond in Persian
      * @param  owner_    The bond owner.
-     * @param  payout_   The PARS payout amount.
+     * @param  payout_   The ASHA payout amount.
      * @param  expiry_   The maturity timestamp.
      * @param  marketId_ The source market ID.
      * @return index_    The bond index for the owner.
@@ -139,7 +139,7 @@ contract BondTeller is IBondTeller, Policy, ReentrancyGuard {
      * @dev    Bazkhаrid (بازخرید) = Redemption in Persian
      * @param  owner_   The bond owner.
      * @param  indexes_ The bond indexes to redeem.
-     * @return payout_  The total PARS redeemed.
+     * @return payout_  The total ASHA redeemed.
      */
     function redeem(
         address owner_,
@@ -167,13 +167,13 @@ contract BondTeller is IBondTeller, Policy, ReentrancyGuard {
         if (payout_ == 0) revert BondTeller_NothingToRedeem();
 
         totalPaidOut += payout_;
-        pars.safeTransfer(owner_, payout_);
+        asha.safeTransfer(owner_, payout_);
     }
 
     /**
      * @notice Redeem all matured bonds for an owner.
      * @param  owner_  The bond owner.
-     * @return payout_ The total PARS redeemed.
+     * @return payout_ The total ASHA redeemed.
      */
     function redeemAll(address owner_) external override nonReentrant returns (uint256 payout_) {
         Note[] storage ownerNotes = notes[owner_];
@@ -196,7 +196,7 @@ contract BondTeller is IBondTeller, Policy, ReentrancyGuard {
         if (payout_ == 0) revert BondTeller_NothingToRedeem();
 
         totalPaidOut += payout_;
-        pars.safeTransfer(owner_, payout_);
+        asha.safeTransfer(owner_, payout_);
     }
 
     // =========  VIEW FUNCTIONS ========= //
