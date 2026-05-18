@@ -1,12 +1,13 @@
-// SPDX-License-Identifier: MIT
-// Copyright (C) 2025, Lux Industries, Inc. All rights reserved.
+// SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.0;
 
 /**
- * @title IAllowList
- * @dev Base interface for allow-list managed precompiles
+ * @title  IAllowList
+ * @author Pars Protocol
+ * @dev    Base interface for allow-list managed precompiles.
  *
- * The AllowList is a permission system used across multiple Lux EVM precompiles.
+ * The AllowList is a permission system used across multiple Pars Network
+ * precompiles (originally introduced by the Subnet-EVM allow-list pattern).
  * It defines four roles with different permission levels:
  *
  * Roles:
