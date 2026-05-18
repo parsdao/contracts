@@ -1,21 +1,21 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.19;
 
 /**
- * @title IAIMining
- * @notice Interface for the AI Mining precompile at address 0x0300
- * @dev Enables EVM contracts to interact with the Hanzo AI Mining Protocol
+ * @title  IAIMining
+ * @author Pars Protocol
+ * @notice Interface for the AI Mining precompile at address 0x0300.
+ * @dev    Enables EVM contracts to interact with the Pars AI Mining Protocol.
  *
  * This precompile provides:
  * - Mining balance queries for ML-DSA addresses
  * - ML-DSA (FIPS 204) signature verification
- * - Teleport transfer claiming from Hanzo L1
+ * - Teleport transfer claiming from the home L1
  * - Pending teleport queries
  *
  * References:
- * - LP-2000: AI Mining Standard
- * - HIP-006: Hanzo AI Mining Protocol
- * - ZIP-005: Zoo AI Mining Integration
+ * - PIP-006: AI Mining Integration (Pars Network)
+ *   Compatible with HIP-006 (Hanzo) and ZIP-005 (Zoo) on peer chains.
  * - FIPS 204: Module-Lattice Digital Signature Algorithm (ML-DSA)
  */
 interface IAIMining {
@@ -89,7 +89,7 @@ interface IAIMining {
      * @return sender The sender's ML-DSA public key hash
      * @return recipient The recipient address
      * @return amount The transfer amount
-     * @return sourceChain The source chain ID (always Hanzo L1)
+     * @return sourceChain The source chain ID (home L1 of the AI Mining Protocol)
      * @return status The transfer status (0=pending, 1=claimed, 2=expired)
      */
     function getTeleportDetails(bytes32 teleportId)
@@ -106,7 +106,7 @@ interface IAIMining {
     // ============ State-Changing Functions ============
 
     /**
-     * @notice Claim teleported AI rewards from Hanzo L1
+     * @notice Claim teleported AI rewards from the home L1
      * @param teleportId The unique teleport transfer identifier
      * @return The amount of AI tokens claimed
      *
@@ -126,16 +126,20 @@ interface IAIMining {
 }
 
 /**
- * @title AIMiningPrecompile
- * @notice Implementation contract that wraps calls to the precompile at 0x0300
- * @dev This contract provides a convenient wrapper for calling the precompile
- *      with proper error handling and gas estimation
+ * @title  AIMiningPrecompile
+ * @author Pars Protocol
+ * @notice Implementation contract that wraps calls to the precompile at 0x0300.
+ * @dev    This contract provides a convenient wrapper for calling the precompile
+ *         with proper error handling and gas estimation.
  */
 contract AIMiningPrecompile {
     /// @notice The precompile address for AI Mining operations
     address public constant PRECOMPILE_ADDRESS = address(0x0300);
 
-    /// @notice Chain IDs supported by Teleport
+    /// @notice Pars Network mainnet chain ID (home L1 for the AI Mining Protocol)
+    uint256 public constant PARS_CHAIN_ID = 7070;
+
+    /// @notice Peer EVM chain IDs reachable via Teleport (cross-chain destinations)
     uint256 public constant HANZO_EVM_CHAIN_ID = 36963;
     uint256 public constant ZOO_EVM_CHAIN_ID = 200200;
     uint256 public constant LUX_CCHAIN_CHAIN_ID = 96369;
@@ -290,8 +294,9 @@ contract AIMiningPrecompile {
 }
 
 /**
- * @title AIMiningHelper
- * @notice Helper library for AI Mining integration
+ * @title  AIMiningHelper
+ * @author Pars Protocol
+ * @notice Helper library for AI Mining integration.
  */
 library AIMiningHelper {
     address constant PRECOMPILE = address(0x0300);
