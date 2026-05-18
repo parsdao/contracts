@@ -3,6 +3,7 @@ pragma solidity 0.8.24;
 
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {IPriceOracle} from "../interfaces/ISale.sol";
+import {SaleConstants} from "./SaleConstants.sol";
 
 /**
  * @title  PriceOracle
@@ -64,12 +65,12 @@ contract PriceOracle is AccessControl, IPriceOracle {
      * @notice Set the price of an asset in satoshis per 1 whole unit.
      * @dev    Only callable by addresses with ORACLE_ROLE.
      *         BTC price is always 1e8 (1 BTC = 100,000,000 sats).
-     * @param  chain       The source chain enum value (0-6).
+     * @param  chain       The source chain enum value (0..SaleConstants.MAX_SUPPORTED_CHAIN).
      * @param  priceInSats Price in satoshis per 1 whole unit of the asset.
      */
     function setPrice(uint8 chain, uint256 priceInSats) external onlyRole(ORACLE_ROLE) {
         if (priceInSats == 0) revert PriceOracle_InvalidPrice();
-        if (chain > 6) revert PriceOracle_PriceNotSet(chain);
+        if (chain > SaleConstants.MAX_SUPPORTED_CHAIN) revert PriceOracle_PriceNotSet(chain);
 
         prices[chain] = priceInSats;
         lastUpdated[chain] = block.timestamp;
@@ -90,7 +91,9 @@ contract PriceOracle is AccessControl, IPriceOracle {
 
         for (uint256 i = 0; i < chains.length; i++) {
             if (pricesInSats[i] == 0) revert PriceOracle_InvalidPrice();
-            if (chains[i] > 6) revert PriceOracle_PriceNotSet(chains[i]);
+            if (chains[i] > SaleConstants.MAX_SUPPORTED_CHAIN) {
+                revert PriceOracle_PriceNotSet(chains[i]);
+            }
 
             prices[chains[i]] = pricesInSats[i];
             lastUpdated[chains[i]] = block.timestamp;

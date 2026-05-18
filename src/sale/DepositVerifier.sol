@@ -9,6 +9,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import {IMintable, ISaleConfig, IDepositVerifier} from "../interfaces/ISale.sol";
+import {SaleConstants} from "./SaleConstants.sol";
 
 /**
  * @title  DepositVerifier
@@ -230,7 +231,9 @@ contract DepositVerifier is AccessControl, Pausable, ReentrancyGuard, IDepositVe
         uint256 depositTime
     ) internal {
         // Validate chain
-        if (sourceChain > 12) revert DepositVerifier_InvalidChain(sourceChain);
+        if (sourceChain > SaleConstants.MAX_SUPPORTED_CHAIN) {
+            revert DepositVerifier_InvalidChain(sourceChain);
+        }
 
         // Validate amount
         if (amountSats == 0) revert DepositVerifier_ZeroAmount();
@@ -258,7 +261,9 @@ contract DepositVerifier is AccessControl, Pausable, ReentrancyGuard, IDepositVe
      */
     function _claim(bytes32[] calldata proof, Deposit calldata deposit) internal {
         // Validate chain
-        if (deposit.sourceChain > 12) revert DepositVerifier_InvalidChain(deposit.sourceChain);
+        if (deposit.sourceChain > SaleConstants.MAX_SUPPORTED_CHAIN) {
+            revert DepositVerifier_InvalidChain(deposit.sourceChain);
+        }
 
         // Validate amount
         if (deposit.amountSats == 0) revert DepositVerifier_ZeroAmount();

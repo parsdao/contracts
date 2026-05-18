@@ -3,6 +3,7 @@ pragma solidity 0.8.24;
 
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {ISaleConfig} from "../interfaces/ISale.sol";
+import {SaleConstants} from "./SaleConstants.sol";
 
 /**
  * @title  SaleConfig
@@ -82,7 +83,7 @@ contract SaleConfig is AccessControl, ISaleConfig {
     }
 
     modifier validChain(uint8 chain) {
-        if (chain > 6) revert SaleConfig_InvalidChain(chain);
+        if (chain > SaleConstants.MAX_SUPPORTED_CHAIN) revert SaleConfig_InvalidChain(chain);
         _;
     }
 
@@ -110,7 +111,7 @@ contract SaleConfig is AccessControl, ISaleConfig {
 
     /**
      * @notice Set the minimum deposit amount for a chain.
-     * @param  chain     The source chain enum value (0-6).
+     * @param  chain     The source chain enum value (0..SaleConstants.MAX_SUPPORTED_CHAIN).
      * @param  minAmount The minimum deposit in native decimals.
      */
     function setMinDeposit(
@@ -123,7 +124,7 @@ contract SaleConfig is AccessControl, ISaleConfig {
 
     /**
      * @notice Set the maximum deposit amount for a chain.
-     * @param  chain     The source chain enum value (0-6).
+     * @param  chain     The source chain enum value (0..SaleConstants.MAX_SUPPORTED_CHAIN).
      * @param  maxAmount The maximum deposit in native decimals.
      */
     function setMaxDeposit(

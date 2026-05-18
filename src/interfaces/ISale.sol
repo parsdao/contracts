@@ -68,20 +68,27 @@ interface ISaleConfig {
  */
 interface IDepositVerifier {
     /// @notice Source chain identifiers.
+    /// @dev    Bound is `SaleConstants.MAX_SUPPORTED_CHAIN` (currently 12).
     enum SourceChain {
-        BTC,  // 0
-        ETH,  // 1
-        SOL,  // 2
-        TON,  // 3
-        XRP,  // 4
-        LUX,  // 5
-        PARS  // 6
+        BTC,     // 0
+        ETH,     // 1
+        SOL,     // 2
+        TON,     // 3
+        XRP,     // 4
+        LUX,     // 5
+        PARS,    // 6
+        BSC,     // 7
+        BASE,    // 8
+        ARB,     // 9
+        POLYGON, // 10
+        ZOO,     // 11
+        HANZO    // 12
     }
 
     /// @notice A verified deposit from an external chain.
     struct Deposit {
         bytes32 sourceTxHash;   // tx hash on source chain
-        uint8 sourceChain;      // enum: BTC=0, ETH=1, SOL=2, TON=3, XRP=4, LUX=5, PARS=6
+        uint8 sourceChain;      // enum SourceChain (0..SaleConstants.MAX_SUPPORTED_CHAIN)
         address depositor;      // pars.network address to mint to
         uint256 amountSats;     // deposit amount normalized to satoshis (BTC-equivalent)
         uint256 depositTime;    // block timestamp of source tx
