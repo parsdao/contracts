@@ -6,7 +6,6 @@ import {Kernel, Actions} from "../src/Kernel.sol";
 import {ASHA} from "../src/tokens/ASHA.sol";
 import {xASHA} from "../src/tokens/xASHA.sol";
 import {veASHA} from "../src/tokens/veASHA.sol";
-import {MIGA} from "../src/tokens/MIGA.sol";
 import {Treasury} from "../src/treasury/Treasury.sol";
 import {FeeRouter} from "../src/treasury/FeeRouter.sol";
 import {Charter} from "../src/governance/Charter.sol";
@@ -50,7 +49,6 @@ contract DeployLocal is Script {
     ASHA public asha;
     xASHA public xasha;
     veASHA public veasha;
-    MIGA public miga;
     Treasury public treasury;
     FeeRouter public feeRouter;
     Charter public charter;
@@ -81,10 +79,7 @@ contract DeployLocal is Script {
         // 5. veASHA
         veasha = new veASHA(address(xasha));
 
-        // 6. MIGA
-        miga = new MIGA(deployer);
-
-        // 7. Treasury (register as kernel module)
+        // 6. Treasury (register as kernel module)
         treasury = new Treasury(kernel);
         kernel.executeAction(Actions.InstallModule, address(treasury));
 
@@ -121,7 +116,6 @@ contract DeployLocal is Script {
         console2.log("ASHA:      ", address(asha));
         console2.log("xASHA:     ", address(xasha));
         console2.log("veASHA:    ", address(veasha));
-        console2.log("MIGA:      ", address(miga));
         console2.log("Treasury:  ", address(treasury));
         console2.log("FeeRouter: ", address(feeRouter));
         console2.log("Charter:   ", address(charter));
@@ -135,7 +129,6 @@ contract DeployLocal is Script {
         vm.serializeAddress(obj, "asha", address(asha));
         vm.serializeAddress(obj, "xasha", address(xasha));
         vm.serializeAddress(obj, "veasha", address(veasha));
-        vm.serializeAddress(obj, "miga", address(miga));
         vm.serializeAddress(obj, "treasury", address(treasury));
         vm.serializeAddress(obj, "feeRouter", address(feeRouter));
         vm.serializeAddress(obj, "charter", address(charter));

@@ -6,7 +6,6 @@ import {Kernel} from "../src/Kernel.sol";
 import {ASHA} from "../src/tokens/ASHA.sol";
 import {xASHA} from "../src/tokens/xASHA.sol";
 import {veASHA} from "../src/tokens/veASHA.sol";
-import {MIGA} from "../src/tokens/MIGA.sol";
 import {Treasury} from "../src/treasury/Treasury.sol";
 import {FeeRouter} from "../src/treasury/FeeRouter.sol";
 import {Charter} from "../src/governance/Charter.sol";
@@ -63,7 +62,6 @@ contract DeployParsCreate2 is Script {
     ASHA public asha;
     xASHA public xasha;
     veASHA public veasha;
-    MIGA public miga;
     Treasury public treasury;
     FeeRouter public feeRouter;
     Charter public charter;
@@ -140,11 +138,7 @@ contract DeployParsCreate2 is Script {
         veasha = new veASHA{salt: _salt("veASHA")}(address(xasha));
         console2.log("veASHA:", address(veasha));
 
-        // 6. Deploy MIGA (CREATE2)
-        miga = new MIGA{salt: _salt("MIGA")}(deployer);
-        console2.log("MIGA:", address(miga));
-
-        // 7. Deploy Treasury (CREATE2)
+        // 6. Deploy Treasury (CREATE2)
         treasury = new Treasury{salt: _salt("Treasury")}(kernel);
         console2.log("Treasury:", address(treasury));
 
@@ -177,7 +171,6 @@ contract DeployParsCreate2 is Script {
         console2.log("ASHA:      ", address(asha));
         console2.log("xASHA:     ", address(xasha));
         console2.log("veASHA:    ", address(veasha));
-        console2.log("MIGA:      ", address(miga));
         console2.log("Treasury:  ", address(treasury));
         console2.log("FeeRouter: ", address(feeRouter));
         console2.log("Charter:   ", address(charter));
