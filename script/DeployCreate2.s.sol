@@ -32,7 +32,7 @@ contract DeployParsCreate2 is Script {
     // =========  CONFIGURATION ========= //
 
     /// @notice Pars Network Chain ID.
-    uint256 public constant PARS_CHAIN_ID = 6133;
+    uint256 public constant PARS_CHAIN_ID = 7070;
 
     /// @notice CREATE2 salt prefix for deterministic deployment.
     bytes32 public constant SALT_PREFIX = keccak256("pars.protocol.v1");

@@ -176,7 +176,7 @@ contract DepositVerifier is AccessControl, Pausable, ReentrancyGuard, IDepositVe
      * @dev    Called by the relay service after verifying the source chain tx.
      *         Bypasses merkle proof — the relayer is trusted to have verified the deposit.
      * @param  sourceTxHash The transaction hash on the source chain.
-     * @param  sourceChain  The source chain enum (0=BTC, 1=ETH, 2=SOL, 3=TON, 4=XRP, 5=LUX, 6=PARS).
+     * @param  sourceChain  The source chain enum (0=BTC, 1=ETH, 2=SOL, 3=TON, 4=XRP, 5=LUX, 6=PARS, 7=BSC, 8=BASE, 9=ARB, 10=POLYGON, 11=ZOO, 12=HANZO).
      * @param  depositor    The Pars address to mint tokens to.
      * @param  amountSats   The deposit amount in BTC-equivalent satoshis.
      * @param  depositTime  The timestamp of the source chain tx.
@@ -231,7 +231,7 @@ contract DepositVerifier is AccessControl, Pausable, ReentrancyGuard, IDepositVe
         uint256 depositTime
     ) internal {
         // Validate chain
-        if (sourceChain > 6) revert DepositVerifier_InvalidChain(sourceChain);
+        if (sourceChain > 12) revert DepositVerifier_InvalidChain(sourceChain);
 
         // Validate amount
         if (amountSats == 0) revert DepositVerifier_ZeroAmount();
@@ -259,7 +259,7 @@ contract DepositVerifier is AccessControl, Pausable, ReentrancyGuard, IDepositVe
      */
     function _claim(bytes32[] calldata proof, Deposit calldata deposit) internal {
         // Validate chain
-        if (deposit.sourceChain > 6) revert DepositVerifier_InvalidChain(deposit.sourceChain);
+        if (deposit.sourceChain > 12) revert DepositVerifier_InvalidChain(deposit.sourceChain);
 
         // Validate amount
         if (deposit.amountSats == 0) revert DepositVerifier_ZeroAmount();

@@ -14,7 +14,7 @@ import {Charter} from "../src/governance/Charter.sol";
  * @title  Pars Protocol Deployment Script
  * @author Pars Protocol
  * @notice Deployment script for the Pars Protocol contracts.
- * @dev    Deploys all core contracts for the Pars Network (Chain ID: 6133).
+ * @dev    Deploys all core contracts for the Pars Network (Chain ID: 7070).
  *
  *         Deployment order:
  *         1. Kernel - Central registry
@@ -35,7 +35,7 @@ contract DeployPars is Script {
     // =========  CONFIGURATION ========= //
 
     /// @notice Pars Network Chain ID.
-    uint256 public constant PARS_CHAIN_ID = 6133;
+    uint256 public constant PARS_CHAIN_ID = 7070;
 
     /// @notice Initial voting delay (1 day at 2s blocks).
     uint256 public constant INITIAL_VOTING_DELAY = 43_200;

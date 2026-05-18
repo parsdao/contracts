@@ -730,9 +730,9 @@ contract DepositVerifierTest is Test {
     function test_processDeposit_revertInvalidChain() public {
         vm.prank(relayer);
         vm.expectRevert(
-            abi.encodeWithSelector(DepositVerifier.DepositVerifier_InvalidChain.selector, 7)
+            abi.encodeWithSelector(DepositVerifier.DepositVerifier_InvalidChain.selector, 13)
         );
-        verifier.processDeposit(keccak256("bad_chain_d"), 7, alice, 1_000_000, block.timestamp);
+        verifier.processDeposit(keccak256("bad_chain_d"), 13, alice, 1_000_000, block.timestamp);
     }
 
     function test_processDeposit_emitsEvent() public {
@@ -896,12 +896,12 @@ contract DepositVerifierTest is Test {
 
     function test_claim_revertInvalidChain() public {
         IDepositVerifier.Deposit memory deposit =
-            _makeDeposit(keccak256("bad_chain"), 7, alice, 1_000_000, block.timestamp);
+            _makeDeposit(keccak256("bad_chain"), 13, alice, 1_000_000, block.timestamp);
 
         bytes32[] memory proof = new bytes32[](0);
 
         vm.prank(alice);
-        vm.expectRevert(abi.encodeWithSelector(DepositVerifier.DepositVerifier_InvalidChain.selector, 7));
+        vm.expectRevert(abi.encodeWithSelector(DepositVerifier.DepositVerifier_InvalidChain.selector, 13));
         verifier.claim(proof, deposit);
     }
 
