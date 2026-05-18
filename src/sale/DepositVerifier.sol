@@ -13,7 +13,7 @@ import {IMintable, ISaleConfig, IDepositVerifier} from "../interfaces/ISale.sol"
 /**
  * @title  DepositVerifier
  * @author Pars Protocol
- * @notice Multi-chain deposit verifier for the CYRUS and MIGA token sales.
+ * @notice Multi-chain deposit verifier for the sale token (IMintable, e.g., ASHA).
  * @dev    Users deposit on any supported chain (BTC, ETH, SOL, TON, XRP, LUX, PARS).
  *         An off-chain relay verifies deposits and builds merkle trees of verified deposits.
  *         The relay submits merkle roots on-chain. Users then claim tokens by proving
@@ -24,11 +24,10 @@ import {IMintable, ISaleConfig, IDepositVerifier} from "../interfaces/ISale.sol"
  *
  *         Where amountSats is the BTC-equivalent value of the deposit (computed off-chain
  *         by the relay and baked into the merkle leaf), and satsPerToken is the current
- *         rate (e.g., if 1 CYRUS = 100 sats, satsPerToken = 100).
+ *         rate (e.g., if 1 token = 100 sats, satsPerToken = 100).
  *
- *         The DepositVerifier must be granted minting authority on the sale token:
- *         - For ASHA: set as the vault in ParsAuthority
- *         - For MIGA: grant BRIDGE_ROLE on the MIGA contract
+ *         The DepositVerifier must be granted minting authority on the sale token
+ *         (for ASHA: set as the vault in ParsAuthority).
  *
  *         Security:
  *         - Merkle proof verification (OpenZeppelin MerkleProof)
@@ -325,7 +324,7 @@ contract DepositVerifier is AccessControl, Pausable, ReentrancyGuard, IDepositVe
     }
 
     /**
-     * @notice Set which token to mint (CYRUS or MIGA address).
+     * @notice Set which token to mint (the IMintable sale token address).
      * @param  token The token contract address.
      */
     function setMintToken(address token) external override onlyRole(ADMIN_ROLE) {

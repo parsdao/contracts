@@ -7,7 +7,7 @@ import {ISaleConfig} from "../interfaces/ISale.sol";
 /**
  * @title  SaleConfig
  * @author Pars Protocol
- * @notice Configuration contract for CYRUS and MIGA token sales.
+ * @notice Configuration contract for the IMintable sale token (e.g., ASHA).
  * @dev    Stores sale parameters including token addresses, deposit limits,
  *         sale window, and running totals for BTC-equivalent raised and tokens minted.
  *
@@ -28,7 +28,7 @@ contract SaleConfig is AccessControl, ISaleConfig {
 
     // =========  STATE ========= //
 
-    /// @notice The token being sold (CYRUS or MIGA address).
+    /// @notice The token being sold (the IMintable sale token address).
     address public override saleToken;
 
     /// @notice The deposit verifier contract address.
@@ -89,7 +89,7 @@ contract SaleConfig is AccessControl, ISaleConfig {
     // =========  ADMIN FUNCTIONS ========= //
 
     /**
-     * @notice Set the sale token address (CYRUS or MIGA).
+     * @notice Set the sale token address (the IMintable sale token).
      * @param  token The token contract address.
      */
     function setSaleToken(address token) external onlyRole(ADMIN_ROLE) {

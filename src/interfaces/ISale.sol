@@ -3,10 +3,9 @@ pragma solidity 0.8.24;
 
 /**
  * @title  IMintable
- * @notice Minimal mint interface satisfied by both ASHA and MIGA tokens.
- * @dev    ASHA.mint requires vault authority; MIGA.mint requires BRIDGE_ROLE.
- *         The DepositVerifier must be granted the appropriate role on whichever
- *         token is configured as the sale token.
+ * @notice Minimal mint interface (satisfied by the sale token, e.g., ASHA).
+ * @dev    The DepositVerifier must be granted minting authority on the sale token
+ *         (for ASHA this means being set as the vault in ParsAuthority).
  */
 interface IMintable {
     function mint(address to, uint256 amount) external;
@@ -35,7 +34,7 @@ interface IPriceOracle {
  * @notice Configuration for the token sale.
  */
 interface ISaleConfig {
-    /// @notice The token being sold (CYRUS or MIGA address).
+    /// @notice The token being sold (e.g., ASHA address).
     function saleToken() external view returns (address);
 
     /// @notice The deposit verifier contract address.
@@ -131,6 +130,6 @@ interface IDepositVerifier {
     /// @notice Set the sats-per-token mint rate.
     function setMintRate(uint256 satsPerToken) external;
 
-    /// @notice Set which token to mint (CYRUS or MIGA address).
+    /// @notice Set which token to mint (the IMintable sale token address).
     function setMintToken(address token) external;
 }
